@@ -1,6 +1,7 @@
 package com.yj.peuteu.api.user.dto.request;
 
 import com.yj.peuteu.api.user.domain.Gender;
+import com.yj.peuteu.api.user.domain.Goal;
 import com.yj.peuteu.api.user.domain.User;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +14,7 @@ public class FindUserResponse {
     private Gender gender;
     private Double height;
     private Double weight;
-    private String goal;
+    private Goal goal;
 
     public static FindUserResponse from(User user) {
         return FindUserResponse.builder()

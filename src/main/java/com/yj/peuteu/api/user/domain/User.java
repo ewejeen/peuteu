@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Entity
 public class User {
     @Id
-    private String idx;
+    private String id;
     private String email;
     private String password;
     private String nickname;
@@ -24,5 +24,6 @@ public class User {
     private Gender gender;
     private Double height;
     private Double weight;
-    private String goal;
+    @Enumerated(EnumType.STRING)
+    private Goal goal;
 }
