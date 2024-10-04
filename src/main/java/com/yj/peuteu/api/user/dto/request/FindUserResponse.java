@@ -9,6 +9,7 @@ import lombok.Data;
 @Builder
 @Data
 public class FindUserResponse {
+    private String id;
     private String email;
     private String nickname;
     private Gender gender;
@@ -18,6 +19,7 @@ public class FindUserResponse {
 
     public static FindUserResponse from(User user) {
         return FindUserResponse.builder()
+                .id(user.getId())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .gender(user.getGender())

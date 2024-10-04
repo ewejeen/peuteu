@@ -4,10 +4,12 @@ import com.yj.peuteu.api.user.application.FindUserService;
 import com.yj.peuteu.api.user.application.SaveUserService;
 import com.yj.peuteu.api.user.dto.request.SaveUserRequest;
 import com.yj.peuteu.common.controller.ApiController;
+import com.yj.peuteu.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -22,12 +24,17 @@ public class UserApiController {
     @PostMapping("/user")
     public ResponseEntity saveUser(@RequestBody SaveUserRequest request) {
         saveUserService.saveUser(request);
-        return ResponseEntity.ok(null);
+        return ApiResponse.created();
+    }
+
+    @GetMapping("/user/{idx}")
+    public ResponseEntity findUserById(@PathVariable String idx) {
+        return ApiResponse.data(findUserService.findUserById(idx));
     }
 
     @GetMapping("/user")
-    public ResponseEntity findUser(String idx) {
-        return ResponseEntity.ok(findUserService.findUser(idx));
+    public ResponseEntity findAllUsers() {
+        return ApiResponse.data(findUserService.findAllUsers());
     }
 }
 

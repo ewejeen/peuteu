@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: release
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://221.140.87.2:13306/peuteu?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul
+    username: peuteu
+    password: 1234
+
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+    hibernate:
+      ddl-auto: none
+    defer-datasource-initialization: true
