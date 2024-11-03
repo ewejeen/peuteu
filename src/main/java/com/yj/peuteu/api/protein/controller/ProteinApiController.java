@@ -1,12 +1,22 @@
 package com.yj.peuteu.api.protein.controller;
 
+import com.yj.peuteu.api.protein.application.FindProteinService;
 import com.yj.peuteu.api.protein.application.SaveProteinService;
+import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.request.SaveProteinRequest;
+import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.common.controller.ApiController;
 import com.yj.peuteu.common.response.ApiResponse;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -15,12 +25,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 @ApiController
 public class ProteinApiController {
 
-    private final SaveProteinService saveProteinService;
+	private final SaveProteinService saveProteinService;
+	private final FindProteinService findProteinService;
 
-    @PostMapping("/protein")
-    public ResponseEntity saveProtein(@RequestBody SaveProteinRequest request) {
-        saveProteinService.saveProtein(request);
-        return ApiResponse.created();
-    }
+	@PostMapping("/protein")
+	public ResponseEntity saveProtein(@RequestBody SaveProteinRequest request) {
+		saveProteinService.saveProtein(request);
+		return ApiResponse.created();
+	}
+
+	@GetMapping("/protein")
+	public ResponseEntity proteinList(FindProteinListRequest request, Pageable pageable) {
+		Page<ProteinListResponse> page = findProteinService.findMyProteinListByDate(request, pageable);
+		return ApiResponse.page(page.getContent(), page.getTotalElements());
+	}
+
+	@PatchMapping("/protein")
+	public ResponseEntity updateProtein(@RequestBody SaveProteinRequest request) {
+		saveProteinService.updateProtein(request);
+		return ApiResponse.ok();
+	}
+
+	@DeleteMapping("/protein")
+	public ResponseEntity deleteProtein(Long proteinId) {
+		saveProteinService.deleteProtein(proteinId);
+		return ApiResponse.ok();
+	}
 }
 

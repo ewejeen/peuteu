@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class SaveProteinRequest {
     private String userId;
+    private Long proteinId;
     private String food;
     private Double intake;
     private String intakeTime;
