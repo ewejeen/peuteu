@@ -1,6 +1,6 @@
 package com.yj.peuteu.common.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
