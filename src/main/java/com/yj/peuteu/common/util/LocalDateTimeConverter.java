@@ -61,6 +61,15 @@ public class LocalDateTimeConverter {
 		return toLocalDateTime(target, "yyyy-MM-dd HH:mm:ss");
 	}
 
+	public static LocalDateTime toLocalDateTimeMinute(String target) {
+		return toLocalDateTime(target, "yyyy-MM-dd HH:mm");
+	}
+
+	public static LocalDateTime toTodayLocalDateTimeByTime(String target) {
+		String nowDate = LocalDateTimeConverter.toString(LocalDateTime.now(), "yyyy-MM-dd");
+		return toLocalDateTimeMinute(nowDate + " " + target);
+	}
+
 	/**
 	 * 문자열 pattern 으로 target 문자열 LocalDate 변환
 	 * @param target

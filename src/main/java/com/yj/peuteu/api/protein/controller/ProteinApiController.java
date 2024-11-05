@@ -30,6 +30,8 @@ public class ProteinApiController {
 
 	@PostMapping("/protein")
 	public ResponseEntity saveProtein(@RequestBody SaveProteinRequest request) {
+		//test
+		request.setUserId("somxkosub2no");
 		saveProteinService.saveProtein(request);
 		return ApiResponse.created();
 	}

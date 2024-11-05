@@ -31,9 +31,8 @@ public class SaveProteinService {
 			.user(user)
 			.food(request.getFood())
 			.intake(request.getIntake())
-			.intakeTime(LocalDateTimeConverter.toLocalDateTimeSecond(request.getIntakeTime()))
+			.intakeTime(LocalDateTimeConverter.toTodayLocalDateTimeByTime(request.getIntakeTime()))
 			.build();
-
 		return proteinJpaRepository.save(protein);
 	}
 
