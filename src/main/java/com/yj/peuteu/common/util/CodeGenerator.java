@@ -10,8 +10,8 @@ public class CodeGenerator {
         return Long.toString(uuid, Character.MAX_RADIX);
     }
 
-    public static String generateWithPrefix(String prefix) {
+    public static String generateCodeWithPrefix(String prefix) {
         String uniqueStr = generateCode();
-        return String.format("%s-%s", prefix, uniqueStr).toUpperCase();
+        return String.format("%s-%s", prefix, uniqueStr).toLowerCase();
     }
 }
