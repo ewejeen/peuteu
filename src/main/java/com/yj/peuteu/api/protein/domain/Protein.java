@@ -15,10 +15,14 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 import static jakarta.persistence.FetchType.LAZY;
+
+import org.hibernate.annotations.DynamicUpdate;
+
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@DynamicUpdate
 @Table(name = "protein")
 @Entity
 public class Protein extends BaseEntity {

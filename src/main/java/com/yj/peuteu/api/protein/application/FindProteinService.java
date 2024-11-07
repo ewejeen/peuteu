@@ -31,6 +31,16 @@ public class FindProteinService {
 	}
 
 	/**
+	 * 해당 날짜의 본인 프로틴 총합 조회
+	 * @param targetDate
+	 * @return
+	 */
+	public Double findMyProteinSumOfDay(String targetDate) {
+		String userId = "somxkosub2no";
+		return proteinQdslRepository.findMyProteinSumOfDay(userId, targetDate);
+	}
+
+	/**
 	 * 프로틴 아이디로 상세 조회
 	 * @param proteinId
 	 * @return

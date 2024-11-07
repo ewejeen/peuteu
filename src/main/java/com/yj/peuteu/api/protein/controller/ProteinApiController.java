@@ -1,5 +1,7 @@
 package com.yj.peuteu.api.protein.controller;
 
+import java.time.LocalDate;
+
 import com.yj.peuteu.api.protein.application.FindProteinService;
 import com.yj.peuteu.api.protein.application.SaveProteinService;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
@@ -7,6 +9,7 @@ import com.yj.peuteu.api.protein.dto.request.SaveProteinRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.common.controller.ApiController;
 import com.yj.peuteu.common.response.ApiResponse;
+import com.yj.peuteu.common.util.LocalDateTimeConverter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +39,12 @@ public class ProteinApiController {
 	public ResponseEntity proteinList(@ModelAttribute FindProteinListRequest request, Pageable pageable) {
 		Page<ProteinListResponse> page = findProteinService.findMyProteinListByDate(request, pageable);
 		return ApiResponse.page(page.getContent(), page.getTotalElements());
+	}
+
+	@GetMapping("/protein-sum")
+	public ResponseEntity getProteinSum() {
+		String targetDate = LocalDateTimeConverter.toStringDate(LocalDate.now());
+		return ApiResponse.data(findProteinService.findMyProteinSumOfDay(targetDate));
 	}
 
 	@PatchMapping("/protein")

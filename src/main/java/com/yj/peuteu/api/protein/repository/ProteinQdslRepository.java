@@ -72,4 +72,17 @@ public class ProteinQdslRepository {
 		return intakeTime.loe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss"))
 			.and(intakeTime.goe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 00:00:00", "yyyy-MM-dd HH:mm:ss")));
 	}
+
+	public Double findMyProteinSumOfDay(String userId, String targetDate) {
+		return queryFactory
+			.select(
+				protein.intake.sum()
+			)
+			.from(protein)
+			.where(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
+				user.id.eq(userId),
+				eqTargetDate(protein.intakeTime, targetDate)
+			)
+			.fetchOne();
+	}
 }
