@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- 로그 패턴에 색상 적용 %clr(pattern){color} -->
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+
     <!-- log 기록 절대 위치 설정 -->
-    <property name="LOGS_ABSOLUTE_PATH" value="./logs" />
+    <property name="LOGS_ABSOLUTE_PATH" value="/peuteu/back/logs" />
+<!--    <property name="LOGS_ABSOLUTE_PATH" value="C:/Dev/logs" />-->
 
     <property name="CONSOLE_LOG_PATTERN"
               value="[%d{yyyy-MM-dd HH:mm:ss}:%-3relative]  %clr(%-5level) %clr(${PID:-}){magenta} %clr(---){faint} %clr([%15.15thread]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %msg%n"/>
@@ -23,7 +27,7 @@
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>peuteu-log.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>peuteu-log.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
@@ -31,13 +35,13 @@
 
     <!-- log 레벨 설정 (logging.level.root=info)-->
     <root level="info">
-        <!--     참조할 appender 설정 - STDOUT -->
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
     </root>
 
-    <!-- log 레벨 설정 (org.springframework.web=debug)-->
+    <!-- log 레벨 설정 (org.springframework.web=debug)
     <logger name="org.springframework.web" level="debug">
         <appender-ref ref="FILE" />
-    </logger>
+    </logger>-->
 
 </configuration>
