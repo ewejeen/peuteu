@@ -36,7 +36,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 	 */
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-		if (request.getRequestURI().equals(NO_CHECK_URL)) {
+		filterChain.doFilter(request, response);
+		/*if (request.getRequestURI().equals(NO_CHECK_URL)) {
 			filterChain.doFilter(request, response);
 			return;//안해주면 아래로 내려가서 계속 필터를 진행하게됨
 		}
@@ -55,7 +56,7 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 		}
 
 		log.info("리프레시 토큰 미존재");
-		checkAccessTokenAndAuthentication(request, response, filterChain);//4
+		checkAccessTokenAndAuthentication(request, response, filterChain);//4*/
 	}
 
 	/**
