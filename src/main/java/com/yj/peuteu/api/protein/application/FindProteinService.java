@@ -1,17 +1,15 @@
 package com.yj.peuteu.api.protein.application;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
 import com.yj.peuteu.api.protein.domain.Protein;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.exception.ProteinNotFoundException;
 import com.yj.peuteu.api.protein.repository.ProteinJpaRepository;
 import com.yj.peuteu.api.protein.repository.ProteinQdslRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
@@ -21,6 +19,7 @@ public class FindProteinService {
 
 	/**
 	 * 해당 날짜의 본인 프로틴 목록 조회
+	 *
 	 * @param request
 	 * @param pageable
 	 * @return
@@ -32,6 +31,7 @@ public class FindProteinService {
 
 	/**
 	 * 해당 날짜의 본인 프로틴 총합 조회
+	 *
 	 * @param targetDate
 	 * @return
 	 */
@@ -42,11 +42,35 @@ public class FindProteinService {
 
 	/**
 	 * 프로틴 아이디로 상세 조회
+	 *
 	 * @param proteinId
 	 * @return
 	 */
 	public Protein findProteinById(Long proteinId) {
 		return proteinJpaRepository.findById(proteinId)
-			.orElseThrow(() -> new ProteinNotFoundException());
+				.orElseThrow(() -> new ProteinNotFoundException());
 	}
+
+	/**
+	 * 현재 내 프로틴 섭취 목표량 조회
+	 *
+	 * @return
+	 */
+	public Double findMyProteinTarget() {
+		String userId = "somxkosub2no";
+		return proteinQdslRepository.findMyProteinTarget(userId);
+	}
+
+	/**
+	 * 선택한 달의 프로틴 목표 달성일 카운트
+	 *
+	 * @param targetYear
+	 * @param targetMonth
+	 * @return
+	 */
+	public Integer countTargetCompletedDates(int targetYear, int targetMonth) {
+		String userId = "somxkosub2no";
+		return proteinQdslRepository.countTargetCompletedDates(userId, targetYear, targetMonth);
+	}
+
 }

@@ -1,26 +1,28 @@
 package com.yj.peuteu.api.protein.repository;
 
-import static com.yj.peuteu.api.protein.domain.QProtein.*;
-import static com.yj.peuteu.api.user.domain.QUser.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Repository;
-
-import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.DateTimePath;
+import com.querydsl.core.types.dsl.*;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.yj.peuteu.api.protein.domain.QTargetIntake;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.QProteinListResponse;
 import com.yj.peuteu.common.enums.DeleteYn;
 import com.yj.peuteu.common.util.LocalDateTimeConverter;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.List;
+
+import static com.yj.peuteu.api.protein.domain.QProtein.protein;
+import static com.yj.peuteu.api.protein.domain.QTargetIntake.targetIntake;
+import static com.yj.peuteu.api.user.domain.QUser.user;
 
 @RequiredArgsConstructor
 @Repository
@@ -29,38 +31,38 @@ public class ProteinQdslRepository {
 
 	public Page<ProteinListResponse> findPageByDate(FindProteinListRequest request, Pageable pageable) {
 		List<ProteinListResponse> list = queryFactory
-			.select(
-				new QProteinListResponse(
-					protein.id,
-					protein.food,
-					protein.intake,
-					protein.intakeTime
+				.select(
+						new QProteinListResponse(
+								protein.id,
+								protein.food,
+								protein.intake,
+								protein.intakeTime
+						)
 				)
-			)
-			.from(protein)
-			.leftJoin(protein.user, user)
-			.where(
-				protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
-				user.id.eq(request.getUserId()),
-				eqTargetDate(protein.intakeTime, request.getTargetDate())
-			)
-			.orderBy(
-				protein.intakeTime.desc()
-			)
-			.offset(pageable.getOffset())
-			.limit(pageable.getPageSize())
-			.fetch();
+				.from(protein)
+				.leftJoin(protein.user, user)
+				.where(
+						protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
+						user.id.eq(request.getUserId()),
+						eqTargetDate(protein.intakeTime, request.getTargetDate())
+				)
+				.orderBy(
+						protein.intakeTime.desc()
+				)
+				.offset(pageable.getOffset())
+				.limit(pageable.getPageSize())
+				.fetch();
 
 		Long count = queryFactory
-			.select(protein.count())
-			.from(protein)
-			.leftJoin(protein.user, user)
-			.where(
-				protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
-				user.id.eq(request.getUserId()),
-				eqTargetDate(protein.intakeTime, request.getTargetDate())
-			)
-			.fetchOne();
+				.select(protein.count())
+				.from(protein)
+				.leftJoin(protein.user, user)
+				.where(
+						protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
+						user.id.eq(request.getUserId()),
+						eqTargetDate(protein.intakeTime, request.getTargetDate())
+				)
+				.fetchOne();
 
 		return new PageImpl<>(list, pageable, count);
 	}
@@ -70,19 +72,74 @@ public class ProteinQdslRepository {
 			return null;
 		}
 		return intakeTime.loe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss"))
-			.and(intakeTime.goe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 00:00:00", "yyyy-MM-dd HH:mm:ss")));
+				.and(intakeTime.goe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 00:00:00", "yyyy-MM-dd HH:mm:ss")));
 	}
 
 	public Double findMyProteinSumOfDay(String userId, String targetDate) {
 		return queryFactory
-			.select(
-				protein.intake.sum()
-			)
-			.from(protein)
-			.where(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
-				user.id.eq(userId),
-				eqTargetDate(protein.intakeTime, targetDate)
-			)
-			.fetchOne();
+				.select(
+						protein.intake.sum()
+				)
+				.from(protein)
+				.where(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
+						user.id.eq(userId),
+						eqTargetDate(protein.intakeTime, targetDate)
+				)
+				.fetchOne();
+	}
+
+	public Double findMyProteinTarget(String userId) {
+		QTargetIntake subIntake = new QTargetIntake("sub");
+		return queryFactory
+				.select(targetIntake.target)
+				.from(targetIntake)
+				.where(
+						user.id.eq(userId),
+						targetIntake.createdAt.eq(
+						JPAExpressions.select(subIntake.createdAt.max())
+								.from(subIntake)
+								.where(subIntake.createdAt.loe(LocalDateTime.now()))
+								.orderBy(subIntake.createdAt.desc())
+				))
+				.fetchOne();
+
+	}
+
+	public Integer countTargetCompletedDates(String userId, int targetYear, int targetMonth) {
+		LocalDate firstDateOfMonth = LocalDate.of(targetYear, targetMonth, 1);
+		LocalDate lastDateOfMonth = firstDateOfMonth.with(TemporalAdjusters.lastDayOfMonth());
+		LocalDateTime firstTimeOfMonth = firstDateOfMonth.atTime(0, 0, 0);
+		LocalDateTime lastTimeOfMonth = lastDateOfMonth.atTime(23, 59, 59);
+
+		QTargetIntake subIntake = new QTargetIntake("sub");
+
+		List<Boolean> targetReachedList = queryFactory
+				.select(
+						protein.intake.sum().goe(
+								JPAExpressions.select(targetIntake.target)
+										.from(targetIntake)
+										.where(targetIntake.createdAt.eq(
+												JPAExpressions.select(subIntake.createdAt.max())
+														.from(subIntake)
+														.where(subIntake.createdAt.loe(protein.intakeTime))
+														.orderBy(subIntake.createdAt.desc())
+										))
+						)
+				)
+				.from(protein)
+				.leftJoin(protein.user, user)
+				.where(
+						user.id.eq(userId)
+								.and(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)))
+								.and(protein.intakeTime.between(firstTimeOfMonth, lastTimeOfMonth))
+				)
+				.groupBy(user.id, Expressions.dateTemplate(
+						LocalDate.class, "DATE_FORMAT({0}, {1})", protein.intakeTime, "%Y-%m-%d"))
+				.fetch();
+
+
+		return targetReachedList.stream()
+				.mapToInt(reached -> reached ? 1 : 0)
+				.sum();
 	}
 }

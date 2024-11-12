@@ -40,6 +40,7 @@ public class Protein extends BaseEntity {
 
     private LocalDateTime intakeTime;
 
+    @Enumerated(EnumType.STRING)
     private DeleteYn deleteYn;
 
     public Protein update(SaveProteinRequest request) {

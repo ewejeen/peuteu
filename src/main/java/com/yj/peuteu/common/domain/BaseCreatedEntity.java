@@ -1,15 +1,13 @@
 package com.yj.peuteu.common.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.MappedSuperclass;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -19,11 +17,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @EntityListeners(AuditingEntityListener.class)
-public abstract class BaseEntity extends BaseCreatedEntity {
+public abstract class BaseCreatedEntity {
 
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
+    @CreatedDate
+    private LocalDateTime createdAt;
 
-    @LastModifiedBy
-    private String lastModifiedBy;
+    @CreatedBy
+    private String createdBy;
 }

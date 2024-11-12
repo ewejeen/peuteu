@@ -58,5 +58,15 @@ public class ProteinApiController {
 		saveProteinService.deleteProtein(proteinId);
 		return ApiResponse.ok();
 	}
+
+	@GetMapping("/protein-target")
+	public ResponseEntity findMyProteinTarget() {
+		return ApiResponse.data(findProteinService.findMyProteinTarget());
+	}
+
+	@GetMapping("/protein-reached-dates")
+	public ResponseEntity countTargetCompletedDates(int targetYear, int targetMonth) {
+		return ApiResponse.data(findProteinService.countTargetCompletedDates(targetYear, targetMonth));
+	}
 }
 
