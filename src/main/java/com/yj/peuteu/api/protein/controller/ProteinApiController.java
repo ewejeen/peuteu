@@ -64,7 +64,12 @@ public class ProteinApiController {
 		return ApiResponse.data(findProteinService.findMyProteinTarget());
 	}
 
-	@GetMapping("/protein-reached-dates")
+	@GetMapping("/protein-month-stat")
+	public ResponseEntity findProteinMonthStatList(int targetYear, int targetMonth) {
+		return ApiResponse.data(findProteinService.findProteinMonthStatList(targetYear, targetMonth));
+	}
+
+	@GetMapping("/protein-reached-dates-count")
 	public ResponseEntity countTargetCompletedDates(int targetYear, int targetMonth) {
 		return ApiResponse.data(findProteinService.countTargetCompletedDates(targetYear, targetMonth));
 	}

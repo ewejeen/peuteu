@@ -1,11 +1,13 @@
 package com.yj.peuteu.api.protein.repository;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.*;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yj.peuteu.api.protein.domain.QTargetIntake;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
+import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
 import com.yj.peuteu.api.protein.dto.response.QProteinListResponse;
 import com.yj.peuteu.common.enums.DeleteYn;
 import com.yj.peuteu.common.util.LocalDateTimeConverter;
@@ -19,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yj.peuteu.api.protein.domain.QProtein.protein;
 import static com.yj.peuteu.api.protein.domain.QTargetIntake.targetIntake;
@@ -105,11 +108,64 @@ public class ProteinQdslRepository {
 
 	}
 
+	public List<ProteinMonthStatListResponse> findProteinMonthStatList(String userId, int targetYear, int targetMonth) {
+		LocalDateTime firstTimeOfMonth = getFirstTimeOfMonth(targetYear, targetMonth);
+		LocalDateTime lastTimeOfMonth = getLastTimeOfMonth(targetYear, targetMonth);
+
+		QTargetIntake subIntake = new QTargetIntake("sub");
+
+		List<Tuple> result = queryFactory
+			.select(
+				Expressions.dateTemplate(
+					String.class, "DATE_FORMAT({0}, {1})", protein.intakeTime, "%Y-%m-%d"
+				),
+				protein.intake.sum(),
+				JPAExpressions.select(targetIntake.target)
+					.from(targetIntake)
+					.where(targetIntake.createdAt.eq(
+						JPAExpressions.select(subIntake.createdAt.max())
+							.from(subIntake)
+							.where(subIntake.createdAt.loe(protein.intakeTime))
+							.orderBy(subIntake.createdAt.desc())
+					)),
+				protein.intake.sum().goe(
+					JPAExpressions.select(targetIntake.target)
+						.from(targetIntake)
+						.where(targetIntake.createdAt.eq(
+							JPAExpressions.select(subIntake.createdAt.max())
+								.from(subIntake)
+								.where(subIntake.createdAt.loe(protein.intakeTime))
+								.orderBy(subIntake.createdAt.desc())
+						))
+				)
+			)
+			.from(protein)
+			.leftJoin(protein.user, user)
+			.where(
+				user.id.eq(userId)
+					.and(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)))
+					.and(protein.intakeTime.between(firstTimeOfMonth, lastTimeOfMonth))
+			)
+			.groupBy(Expressions.dateTemplate(
+				LocalDate.class, "DATE_FORMAT({0}, {1})", protein.intakeTime, "%Y-%m-%d"))
+			.fetch();
+
+		// 목표를 달성한 날짜만 필터링하여 목록 생성
+		return result.stream()
+			// .filter(tuple -> tuple.get(3, Boolean.class))
+			.map(tuple -> ProteinMonthStatListResponse.builder()
+				.date(tuple.get(0, String.class))
+				.intake(tuple.get(1, Double.class))
+				.targetIntake(tuple.get(2, Double.class))
+				.isSuccess(tuple.get(3, Boolean.class))
+				.build())
+			.collect(Collectors.toList());
+	}
+
+
 	public Integer countTargetCompletedDates(String userId, int targetYear, int targetMonth) {
-		LocalDate firstDateOfMonth = LocalDate.of(targetYear, targetMonth, 1);
-		LocalDate lastDateOfMonth = firstDateOfMonth.with(TemporalAdjusters.lastDayOfMonth());
-		LocalDateTime firstTimeOfMonth = firstDateOfMonth.atTime(0, 0, 0);
-		LocalDateTime lastTimeOfMonth = lastDateOfMonth.atTime(23, 59, 59);
+		LocalDateTime firstTimeOfMonth = getFirstTimeOfMonth(targetYear, targetMonth);
+		LocalDateTime lastTimeOfMonth = getLastTimeOfMonth(targetYear, targetMonth);
 
 		QTargetIntake subIntake = new QTargetIntake("sub");
 
@@ -141,5 +197,14 @@ public class ProteinQdslRepository {
 		return targetReachedList.stream()
 				.mapToInt(reached -> reached ? 1 : 0)
 				.sum();
+	}
+
+	private LocalDateTime getFirstTimeOfMonth(int targetYear, int targetMonth) {
+		return LocalDate.of(targetYear, targetMonth, 1).atTime(0, 0, 0);
+	}
+
+	private LocalDateTime getLastTimeOfMonth(int targetYear, int targetMonth) {
+		LocalDate lastDateOfMonth = LocalDate.of(targetYear, targetMonth, 1).with(TemporalAdjusters.lastDayOfMonth());
+		return lastDateOfMonth.atTime(23, 59, 59);
 	}
 }

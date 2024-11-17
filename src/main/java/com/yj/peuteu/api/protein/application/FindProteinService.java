@@ -1,8 +1,11 @@
 package com.yj.peuteu.api.protein.application;
 
+import java.util.List;
+
 import com.yj.peuteu.api.protein.domain.Protein;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
+import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
 import com.yj.peuteu.api.protein.exception.ProteinNotFoundException;
 import com.yj.peuteu.api.protein.repository.ProteinJpaRepository;
 import com.yj.peuteu.api.protein.repository.ProteinQdslRepository;
@@ -59,6 +62,18 @@ public class FindProteinService {
 	public Double findMyProteinTarget() {
 		String userId = "somxkosub2no";
 		return proteinQdslRepository.findMyProteinTarget(userId);
+	}
+
+	/**
+	 * 선택한 달의 프로틴 목표 달성일 목록
+	 *
+	 * @param targetYear
+	 * @param targetMonth
+	 * @return
+	 */
+	public List<ProteinMonthStatListResponse> findProteinMonthStatList(int targetYear, int targetMonth) {
+		String userId = "somxkosub2no";
+		return proteinQdslRepository.findProteinMonthStatList(userId, targetYear, targetMonth);
 	}
 
 	/**
