@@ -4,12 +4,16 @@ import java.util.List;
 
 import com.yj.peuteu.api.protein.domain.Protein;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
+import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
+import com.yj.peuteu.api.protein.dto.response.ProteinSumListByDatesResponse;
 import com.yj.peuteu.api.protein.exception.ProteinNotFoundException;
 import com.yj.peuteu.api.protein.repository.ProteinJpaRepository;
 import com.yj.peuteu.api.protein.repository.ProteinQdslRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -51,7 +55,7 @@ public class FindProteinService {
 	 */
 	public Protein findProteinById(Long proteinId) {
 		return proteinJpaRepository.findById(proteinId)
-				.orElseThrow(() -> new ProteinNotFoundException());
+			.orElseThrow(() -> new ProteinNotFoundException());
 	}
 
 	/**
@@ -88,4 +92,15 @@ public class FindProteinService {
 		return proteinQdslRepository.countTargetCompletedDates(userId, targetYear, targetMonth);
 	}
 
+	/**
+	 * 제시된 날짜의 프로틴 섭취량 목록
+	 *
+	 * @param request
+	 * @return
+	 */
+	public List<ProteinSumListByDatesResponse> findProteinSumListByDates(FindProteinSumListByDatesRequest request) {
+		String userId = "somxkosub2no";
+		request.setUserId(userId);
+		return proteinQdslRepository.findProteinSumListByDates(request);
+	}
 }

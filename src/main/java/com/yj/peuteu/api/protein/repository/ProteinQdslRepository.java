@@ -6,9 +6,12 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yj.peuteu.api.protein.domain.QTargetIntake;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
+import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
+import com.yj.peuteu.api.protein.dto.response.ProteinSumListByDatesResponse;
 import com.yj.peuteu.api.protein.dto.response.QProteinListResponse;
+import com.yj.peuteu.api.protein.dto.response.QProteinSumListByDatesResponse;
 import com.yj.peuteu.common.enums.DeleteYn;
 import com.yj.peuteu.common.util.LocalDateTimeConverter;
 import lombok.RequiredArgsConstructor;
@@ -70,20 +73,13 @@ public class ProteinQdslRepository {
 		return new PageImpl<>(list, pageable, count);
 	}
 
-	private BooleanExpression eqTargetDate(DateTimePath<LocalDateTime> intakeTime, String targetDate) {
-		if (targetDate == null) {
-			return null;
-		}
-		return intakeTime.loe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss"))
-				.and(intakeTime.goe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 00:00:00", "yyyy-MM-dd HH:mm:ss")));
-	}
-
 	public Double findMyProteinSumOfDay(String userId, String targetDate) {
 		return queryFactory
 				.select(
 						protein.intake.sum()
 				)
 				.from(protein)
+				.leftJoin(protein.user, user)
 				.where(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
 						user.id.eq(userId),
 						eqTargetDate(protein.intakeTime, targetDate)
@@ -96,6 +92,7 @@ public class ProteinQdslRepository {
 		return queryFactory
 				.select(targetIntake.target)
 				.from(targetIntake)
+				.leftJoin(targetIntake.user, user)
 				.where(
 						user.id.eq(userId),
 						targetIntake.createdAt.eq(
@@ -197,6 +194,48 @@ public class ProteinQdslRepository {
 		return targetReachedList.stream()
 				.mapToInt(reached -> reached ? 1 : 0)
 				.sum();
+	}
+
+	public List<ProteinSumListByDatesResponse> findProteinSumListByDates(FindProteinSumListByDatesRequest request) {
+		return queryFactory
+			.select(
+				new QProteinSumListByDatesResponse(
+					formatDateTimeString(protein.intakeTime),
+					protein.intake.sum()
+				)
+			)
+			.from(protein)
+			.leftJoin(protein.user, user)
+			.where(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
+				user.id.eq(request.getUserId()),
+				inTargetDate(protein.intakeTime, request.getTargetDates())
+			)
+			.groupBy(formatDateTimeString(protein.intakeTime))
+			.orderBy(protein.intakeTime.asc())
+			.fetch();
+	}
+
+	private BooleanExpression eqTargetDate(DateTimePath<LocalDateTime> intakeTime, String targetDate) {
+		if (targetDate == null) {
+			return null;
+		}
+		return intakeTime.loe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss"))
+			.and(intakeTime.goe(LocalDateTimeConverter.toLocalDateTime(targetDate + " 00:00:00", "yyyy-MM-dd HH:mm:ss")));
+	}
+
+	private BooleanExpression inTargetDate(DateTimePath<LocalDateTime> intakeTime, List<String> targetDates) {
+		if (targetDates == null) {
+			return null;
+		}
+		return formatDateTimeString(intakeTime).in(targetDates);
+	}
+
+	private DateTemplate<LocalDate> formatDateTimeLocalDate(DateTimePath<LocalDateTime> dateTime) {
+		return Expressions.dateTemplate(LocalDate.class, "DATE_FORMAT({0}, {1})", dateTime, "%Y-%m-%d");
+	}
+
+	private DateTemplate<String> formatDateTimeString(DateTimePath<LocalDateTime> dateTime) {
+		return Expressions.dateTemplate(String.class, "DATE_FORMAT({0}, {1})", dateTime, "%Y-%m-%d");
 	}
 
 	private LocalDateTime getFirstTimeOfMonth(int targetYear, int targetMonth) {
