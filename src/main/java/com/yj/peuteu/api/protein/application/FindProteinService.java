@@ -7,6 +7,7 @@ import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
+import com.yj.peuteu.api.protein.dto.response.ProteinSearchListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinSumListByDatesResponse;
 import com.yj.peuteu.api.protein.exception.ProteinNotFoundException;
 import com.yj.peuteu.api.protein.repository.ProteinJpaRepository;
@@ -102,5 +103,16 @@ public class FindProteinService {
 		String userId = "somxkosub2no";
 		request.setUserId(userId);
 		return proteinQdslRepository.findProteinSumListByDates(request);
+	}
+
+	/**
+	 * 이름으로 음식 검색
+	 *
+	 * @param name
+	 * @return
+	 */
+	public List<ProteinSearchListResponse> findProteinInfoByName(String name) {
+		String userId = "somxkosub2no";
+		return proteinQdslRepository.findProteinInfoByName(userId, name);
 	}
 }

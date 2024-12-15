@@ -9,8 +9,10 @@ import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
+import com.yj.peuteu.api.protein.dto.response.ProteinSearchListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinSumListByDatesResponse;
 import com.yj.peuteu.api.protein.dto.response.QProteinListResponse;
+import com.yj.peuteu.api.protein.dto.response.QProteinSearchListResponse;
 import com.yj.peuteu.api.protein.dto.response.QProteinSumListByDatesResponse;
 import com.yj.peuteu.common.enums.DeleteYn;
 import com.yj.peuteu.common.util.LocalDateTimeConverter;
@@ -212,6 +214,26 @@ public class ProteinQdslRepository {
 			)
 			.groupBy(formatDateTimeString(protein.intakeTime))
 			.orderBy(protein.intakeTime.asc())
+			.fetch();
+	}
+
+	public List<ProteinSearchListResponse> findProteinInfoByName(String userId, String name) {
+		return queryFactory
+			.select(
+				new QProteinSearchListResponse(
+					protein.food,
+					protein.intake
+				)
+			)
+			.from(protein)
+			.leftJoin(protein.user, user)
+			.where(
+				protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
+				user.id.eq(userId),
+				name == null ? null : protein.food.contains(name)
+			)
+			.orderBy(protein.food.asc())
+			.distinct()
 			.fetch();
 	}
 

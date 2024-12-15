@@ -126,5 +126,16 @@ public class ProteinApiController {
 	public ResponseEntity getProteinSumList(@ModelAttribute FindProteinSumListByDatesRequest request) {
 		return ApiResponse.data(findProteinService.findProteinSumListByDates(request));
 	}
+
+	/**
+	 * 이름으로 음식 검색
+	 *
+	 * @param name
+	 * @return
+	 */
+	@GetMapping("/protein-intake-list")
+	public ResponseEntity searchProtein(String name) {
+		return ApiResponse.data(findProteinService.findProteinInfoByName(name));
+	}
 }
 
