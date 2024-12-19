@@ -7,6 +7,7 @@ import com.yj.peuteu.api.protein.application.SaveProteinService;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
 import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
 import com.yj.peuteu.api.protein.dto.request.SaveProteinRequest;
+import com.yj.peuteu.api.protein.dto.request.SaveProteinTargetRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.common.controller.ApiController;
 import com.yj.peuteu.common.response.ApiResponse;
@@ -92,6 +93,18 @@ public class ProteinApiController {
 	@GetMapping("/protein-target")
 	public ResponseEntity findMyProteinTarget() {
 		return ApiResponse.data(findProteinService.findMyProteinTarget());
+	}
+
+	/**
+	 * 프로틴 목표량 수정
+	 * @param request
+	 * @return
+	 */
+	@PatchMapping("/protein-target")
+	public ResponseEntity updateMyProteinTarget(@RequestBody SaveProteinTargetRequest request) {//test
+		request.setUserId("somxkosub2no");
+		saveProteinService.updateProteinTarget(request);
+		return ApiResponse.ok();
 	}
 
 	/**

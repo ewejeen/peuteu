@@ -1,8 +1,11 @@
 package com.yj.peuteu.api.protein.application;
 
 import com.yj.peuteu.api.protein.domain.Protein;
+import com.yj.peuteu.api.protein.domain.TargetIntake;
 import com.yj.peuteu.api.protein.dto.request.SaveProteinRequest;
+import com.yj.peuteu.api.protein.dto.request.SaveProteinTargetRequest;
 import com.yj.peuteu.api.protein.repository.ProteinJpaRepository;
+import com.yj.peuteu.api.protein.repository.TargetIntakeJpaRepository;
 import com.yj.peuteu.api.user.application.FindUserService;
 import com.yj.peuteu.api.user.domain.User;
 import com.yj.peuteu.common.util.LocalDateTimeConverter;
@@ -17,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SaveProteinService {
 	private final ProteinJpaRepository proteinJpaRepository;
+	private final TargetIntakeJpaRepository targetIntakeJpaRepository;
 	private final FindProteinService findProteinService;
 	private final FindUserService findUserService;
 
@@ -53,5 +57,20 @@ public class SaveProteinService {
 	public void deleteProtein(Long proteinId) {
 		Protein protein = findProteinService.findProteinById(proteinId);
 		protein.delete();
+	}
+
+	/**
+	 * 프로틴 목표 섭취량 수정
+	 * @param request
+	 * @return
+	 */
+	public void updateProteinTarget(SaveProteinTargetRequest request) {
+		User user = findUserService.findUserEntity(request.getUserId());
+		TargetIntake intake = TargetIntake.builder()
+			.user(user)
+			.target(request.getTarget())
+			.build();
+
+		targetIntakeJpaRepository.save(intake);
 	}
 }
