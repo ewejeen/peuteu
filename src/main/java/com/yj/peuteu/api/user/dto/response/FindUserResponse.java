@@ -1,4 +1,4 @@
-package com.yj.peuteu.api.user.dto.request;
+package com.yj.peuteu.api.user.dto.response;
 
 import com.yj.peuteu.api.user.domain.Gender;
 import com.yj.peuteu.api.user.domain.Goal;
