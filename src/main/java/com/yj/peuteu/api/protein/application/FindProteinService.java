@@ -56,7 +56,7 @@ public class FindProteinService {
 	 */
 	public Protein findProteinById(Long proteinId) {
 		return proteinJpaRepository.findById(proteinId)
-			.orElseThrow(() -> new ProteinNotFoundException());
+				.orElseThrow(() -> new ProteinNotFoundException());
 	}
 
 	/**

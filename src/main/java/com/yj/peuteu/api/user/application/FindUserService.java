@@ -37,16 +37,19 @@ public class FindUserService {
 
 	public User findUserEntity(String userId) {
 		return userJpaRepository.findById(userId)
-			.orElseThrow(() -> new UserNotFoundException());
+			.orElseThrow(UserNotFoundException::new);
 	}
 
 	public User findUserEntityByEmail(String email) {
 		return userJpaRepository.findByEmail(email)
-			.orElseThrow(() -> new UserNotFoundException());
+			.orElseThrow(UserNotFoundException::new);
 	}
 
 	public boolean validatePassword(ValidatePasswordRequest request) {
 		User user = findUserEntity(request.getUserId());
+		if(request.getPassword() == null) {
+			throw new RuntimeException("비밀번호를 입력해 주세요.");
+		}
 
 		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 			return false;

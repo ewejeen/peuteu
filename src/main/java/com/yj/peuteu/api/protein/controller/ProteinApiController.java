@@ -2,6 +2,7 @@ package com.yj.peuteu.api.protein.controller;
 
 import java.time.LocalDate;
 
+import com.yj.peuteu.api.protein.application.CalculateTargetProteinService;
 import com.yj.peuteu.api.protein.application.FindProteinService;
 import com.yj.peuteu.api.protein.application.SaveProteinService;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
@@ -28,6 +29,7 @@ public class ProteinApiController {
 
 	private final SaveProteinService saveProteinService;
 	private final FindProteinService findProteinService;
+	private final CalculateTargetProteinService calculateTargetProteinService;
 
 	/**
 	 * 프로틴 등록
@@ -149,6 +151,18 @@ public class ProteinApiController {
 	@GetMapping("/protein-intake-list")
 	public ResponseEntity searchProtein(String name) {
 		return ApiResponse.data(findProteinService.findProteinInfoByName(name));
+	}
+
+	/**
+	 * 내 목표 섭취량 자동 계산
+	 *
+	 * @param userId
+	 * @return
+	 */
+	@GetMapping("/calculate-my-target")
+	public ResponseEntity calculateMyTarget(String userId) {
+		userId = "somxkosub2no";
+		return ApiResponse.data(calculateTargetProteinService.calculateMyTargetProtein(userId));
 	}
 }
 
