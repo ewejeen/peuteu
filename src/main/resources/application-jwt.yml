@@ -1,10 +1,14 @@
 jwt:
-  secret: 63fba97a41e0d004e10e8dbbcb9a547819280efb00a54c732aca36a8a58258e4fcc539ffc5159a7f0a7be78b86efe001c12ba6af6debeb0a89e8ce7e82e75455
+  prefix: "Bearer "
+  claim: user
+  secret: z9XVyW6fUclUWkHKspICWw
 
   access:
-    expiration: 80 # 80초
+    age: 1800 # 30분
     header: Authorization
+    subject: accessToken
 
   refresh:
-    expiration: 10 # 90초
-    header: Authorization-refresh
+    age: 1209600 # 14일 (60 * 60 * 24 * 14)
+    minAgeInDay: 14
+    subject: refreshToken

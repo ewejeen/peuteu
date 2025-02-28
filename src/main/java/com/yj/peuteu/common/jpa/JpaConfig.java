@@ -1,4 +1,4 @@
-package com.yj.peuteu.common.config;
+package com.yj.peuteu.common.jpa;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
