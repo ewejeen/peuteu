@@ -115,9 +115,7 @@ public class ProteinQdslRepository {
 
 		List<Tuple> result = queryFactory
 			.select(
-				Expressions.dateTemplate(
-					String.class, "DATE_FORMAT({0}, {1})", protein.intakeTime, "%Y-%m-%d"
-				),
+				protein.intakeTime,
 				protein.intake.sum(),
 				JPAExpressions.select(targetIntake.target)
 					.from(targetIntake)
@@ -153,7 +151,7 @@ public class ProteinQdslRepository {
 		return result.stream()
 			// .filter(tuple -> tuple.get(3, Boolean.class))
 			.map(tuple -> ProteinMonthStatListResponse.builder()
-				.date(tuple.get(0, String.class))
+				.date(tuple.get(0, LocalDateTime.class))
 				.intake(tuple.get(1, Double.class))
 				.targetIntake(tuple.get(2, Double.class))
 				.isSuccess(tuple.get(3, Boolean.class))
@@ -250,10 +248,6 @@ public class ProteinQdslRepository {
 			return null;
 		}
 		return formatDateTimeString(intakeTime).in(targetDates);
-	}
-
-	private DateTemplate<LocalDate> formatDateTimeLocalDate(DateTimePath<LocalDateTime> dateTime) {
-		return Expressions.dateTemplate(LocalDate.class, "DATE_FORMAT({0}, {1})", dateTime, "%Y-%m-%d");
 	}
 
 	private DateTemplate<String> formatDateTimeString(DateTimePath<LocalDateTime> dateTime) {
