@@ -17,6 +17,7 @@ import com.yj.peuteu.api.user.dto.request.SaveUserRequest;
 @Entity
 public class User {
 	@Id
+	@Column(name = "user_id")
 	private String id;
 	private String email;
 	private String password;
@@ -30,7 +31,6 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	private Goal goal;
 
-	@Column(length = 1000)
 	private String refreshToken;
 
 	public void updateRefreshToken(String refreshToken) {

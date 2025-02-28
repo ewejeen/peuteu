@@ -8,7 +8,6 @@ import com.yj.peuteu.common.config.security.handler.LoginFailureHandler;
 import com.yj.peuteu.common.config.security.handler.LoginSuccessJWTProvideHandler;
 import com.yj.peuteu.common.config.security.user.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +15,7 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -28,113 +28,107 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+import static org.springframework.boot.autoconfigure.security.servlet.PathRequest.toH2Console;
+
 @RequiredArgsConstructor
 @EnableWebSecurity
 @Configuration
 public class SecurityConfig {
 
-	private final UserDetailsServiceImpl userDetailsService;
-	private final ObjectMapper objectMapper;
-	private final JwtService jwtService;
-	private final UserJpaRepository userJpaRepository;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final ObjectMapper objectMapper;
+    private final JwtService jwtService;
+    private final UserJpaRepository userJpaRepository;
 
-	// 스프링 시큐리티 기능 비활성화 (H2 DB 접근을 위해)
-	//	@Bean
-	//	public WebSecurityCustomizer configure() {
-	//		return (web -> web.ignoring()
-	//				.requestMatchers(toH2Console())
-	//				.requestMatchers("/h2-console/**")
-	//		);
-	//	}
+    @Bean
+    public static PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
 
-	@Bean
-	public static PasswordEncoder passwordEncoder() {
-		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-	}
+    // 스프링 시큐리티 기능 비활성화 (H2 DB 접근을 위해)
+    @Bean
+    public WebSecurityCustomizer configure() {
+        return (web -> web.ignoring()
+                .requestMatchers(toH2Console())
+                .requestMatchers("/h2-console/**", "/static/**")
+        );
+    }
 
-	// 특정 HTTP 요청에 대한 웹 기반 보안 구성
-	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http
-				.csrf(AbstractHttpConfigurer::disable)
-				.httpBasic(AbstractHttpConfigurer::disable)
-				.formLogin(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests((authorize) -> authorize
-//						.requestMatchers("/api/join", "/", "/api/login").permitAll()
-						.requestMatchers("/**").permitAll()
-						.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-						.anyRequest().authenticated())
-				.logout((logout) -> logout
-						.logoutSuccessUrl("/login")
-						.invalidateHttpSession(true))
-				.sessionManagement(session -> session
-						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				);
-		http
-				.addFilterAfter(jsonUsernamePasswordLoginFilter(), LogoutFilter.class) // 추가 : 커스터마이징 된 필터를 SpringSecurityFilterChain에 등록
-				.addFilterBefore(jwtAuthenticationProcessingFilter(), JsonUsernamePasswordAuthenticationFilter.class);
+    // 특정 HTTP 요청에 대한 웹 기반 보안 구성
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests((authorize) -> authorize
+                        .requestMatchers("/api/join", "/api/login", "/error").permitAll()
+//						.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                        .anyRequest().authenticated())
+                .logout((logout) -> logout
+                        .logoutSuccessUrl("/login")
+                        .invalidateHttpSession(true))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
+        http
+                .addFilterAfter(jsonUsernamePasswordLoginFilter(), LogoutFilter.class)
+                .addFilterBefore(jwtAuthenticationProcessingFilter(), JsonUsernamePasswordAuthenticationFilter.class);
 
-		http
-				.cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer
-				.configurationSource(corsConfigurationSource()));
+        http
+                .cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer
+                        .configurationSource(corsConfigurationSource()));
 
-		return http.build();
-	}
+        return http.build();
+    }
 
-	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration config = new CorsConfiguration();
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
 
-		config.setAllowCredentials(true);
-		config.setAllowedOrigins(List.of("http://localhost:3131", "http://192.168.45.132:3131", "http://221.140.87.2:3131"));
-		config.setAllowedMethods(List.of("GET", "POST", "DELETE", "PATCH", "OPTIONS"));
-		config.setAllowedHeaders(List.of("*"));
-		config.setExposedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of("http://localhost:3131", "http://192.168.45.132:3131", "http://221.140.87.2:3131"));
+        config.setAllowedMethods(List.of("GET", "POST", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("*"));
 
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", config);
-		return source;
-	}
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
-	// 인증 관리자 관련 설정
-	@Bean
-	public DaoAuthenticationProvider daoAuthenticationProvider() throws Exception {
-		DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+    // 인증 관리자 관련 설정
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(provider);
+    }
 
-		daoAuthenticationProvider.setUserDetailsService(userDetailsService);
-		daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+    @Bean
+    public LoginSuccessJWTProvideHandler loginSuccessJWTProvideHandler() {
+        return new LoginSuccessJWTProvideHandler(jwtService, userJpaRepository, objectMapper);
+    }
 
-		return daoAuthenticationProvider;
-	}
+    @Bean
+    public LoginFailureHandler loginFailureHandler() {
+        return new LoginFailureHandler(objectMapper);
+    }
 
-	@Bean
-	public AuthenticationManager authenticationManager() throws Exception {//AuthenticationManager 등록
-		DaoAuthenticationProvider provider = daoAuthenticationProvider();//DaoAuthenticationProvider 사용
-		provider.setPasswordEncoder(passwordEncoder());//PasswordEncoder로는 PasswordEncoderFactories.createDelegatingPasswordEncoder() 사용
-		return new ProviderManager(provider);
-	}
-	@Bean
-	public LoginSuccessJWTProvideHandler loginSuccessJWTProvideHandler(){
-		return new LoginSuccessJWTProvideHandler(jwtService, userJpaRepository, objectMapper);
-	}
+    @Bean
+    public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordLoginFilter() {
+        JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordLoginFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
+        jsonUsernamePasswordLoginFilter.setAuthenticationManager(authenticationManager());
+        jsonUsernamePasswordLoginFilter.setAuthenticationSuccessHandler(loginSuccessJWTProvideHandler());
+        jsonUsernamePasswordLoginFilter.setAuthenticationFailureHandler(loginFailureHandler());
+        return jsonUsernamePasswordLoginFilter;
+    }
 
-	@Bean
-	public LoginFailureHandler loginFailureHandler(){
-		return new LoginFailureHandler(objectMapper);
-	}
-	@Bean
-	public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordLoginFilter() throws Exception {
-		JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordLoginFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
-		jsonUsernamePasswordLoginFilter.setAuthenticationManager(authenticationManager());
-		jsonUsernamePasswordLoginFilter.setAuthenticationSuccessHandler(loginSuccessJWTProvideHandler());
-		jsonUsernamePasswordLoginFilter.setAuthenticationFailureHandler(loginFailureHandler());
-		return jsonUsernamePasswordLoginFilter;
-	}
+    @Bean
+    public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() {
+        JwtAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter = new JwtAuthenticationProcessingFilter(jwtService, userJpaRepository);
 
-	@Bean
-	public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter(){
-		JwtAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter = new JwtAuthenticationProcessingFilter(jwtService, userJpaRepository);
-
-		return jsonUsernamePasswordLoginFilter;
-	}
+        return jsonUsernamePasswordLoginFilter;
+    }
 }

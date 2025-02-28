@@ -13,11 +13,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.authority.mapping.NullAuthoritiesMapper;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -26,8 +26,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtService;
 	private final UserJpaRepository userJpaRepository;
-	private final String NO_CHECK_URL = "/api/login";//1
-	private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();//5
+	private final List<String> WHITELIST = List.of("/api/login", "/api/join");
+	private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
 	/**
 	 * 1. 리프레시 토큰이 오는 경우 -> 유효하면 AccessToken 재발급후, 필터 진행 X, 바로 튕기기
@@ -36,27 +36,34 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 	 */
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-		filterChain.doFilter(request, response);
-		/*if (request.getRequestURI().equals(NO_CHECK_URL)) {
+		if (WHITELIST.contains(request.getRequestURI())) {
 			filterChain.doFilter(request, response);
-			return;//안해주면 아래로 내려가서 계속 필터를 진행하게됨
-		}
-
-		String refreshToken = jwtService
-				.extractRefreshToken(request)
-				.filter(jwtService::isTokenValid)
-				.orElse(null); //2
-
-		log.info("refreshToken: {}", refreshToken);
-
-		if (refreshToken != null) {
-			log.info("리프레시 토큰 존재");
-			checkRefreshTokenAndReIssueAccessToken(response, refreshToken);//3
 			return;
 		}
 
-		log.info("리프레시 토큰 미존재");
-		checkAccessTokenAndAuthentication(request, response, filterChain);//4*/
+		log.info("request: {}", request.getRequestURI());
+
+//		checkAccessTokenAndAuthentication(request, response, filterChain);
+
+		Optional<String> accessToken = jwtService.extractAccessToken(request);
+		if(accessToken.isPresent() && jwtService.isTokenValid(accessToken.get())) {
+			authenticateUser(accessToken.get());
+			filterChain.doFilter(request, response);
+			return;
+		}
+
+		// Access Token 만료된 경우 Refresh Token 검증 후 재발급
+		Optional<String> refreshToken = jwtService.extractRefreshToken(request);
+		refreshToken.ifPresent(token -> checkRefreshTokenAndReIssueAccessToken(response, token));
+
+		filterChain.doFilter(request, response);
+	}
+
+	// Access Token이 유효한 경우 유저 인증 처리
+	private void authenticateUser(String accessToken) {
+		jwtService.extractEmail(accessToken)
+				.flatMap(userJpaRepository::findByEmail)
+				.ifPresent(this::saveAuthentication);
 	}
 
 	/**
@@ -69,7 +76,8 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 	 * @throws IOException
 	 */
 	private void checkAccessTokenAndAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-		Optional<String> accessToken = jwtService.extractAccessToken(request).filter(jwtService::isTokenValid);
+		Optional<String> accessToken = jwtService.extractAccessToken(request)
+				.filter(jwtService::isTokenValid);
 
 		log.info("accessToken: {}", accessToken);
 
@@ -84,13 +92,18 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 		filterChain.doFilter(request, response);
 	}
 
+	private String reissueRefreshToken(User user) {
+		String reissuedRefreshToken = jwtService.createRefreshToken();
+		user.updateRefreshToken(reissuedRefreshToken);
+		userJpaRepository.saveAndFlush(user);
+		return reissuedRefreshToken;
+	}
+
 	private void saveAuthentication(User user) {
 		UserDetailsImpl userDetails = new UserDetailsImpl(user);
 		Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, authoritiesMapper.mapAuthorities(userDetails.getAuthorities()));
 
-		SecurityContext context = SecurityContextHolder.createEmptyContext();//5
-		context.setAuthentication(authentication);
-		SecurityContextHolder.setContext(context);
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 
 	/**
@@ -98,10 +111,34 @@ public class JwtAuthenticationProcessingFilter extends OncePerRequestFilter {
 	 * @param response
 	 * @param refreshToken
 	 */
-	private void checkRefreshTokenAndReIssueAccessToken(HttpServletResponse response, String refreshToken) {
+	/*private void checkRefreshTokenAndReIssueAccessToken(HttpServletResponse response, String refreshToken) {
 		userJpaRepository.findByRefreshToken(refreshToken).ifPresent(
-				users -> jwtService.sendAccessToken(response, jwtService.createAccessToken(users.getEmail()))
+				user -> {
+					String newAccessToken = jwtService.createAccessToken(user.getEmail());
+					jwtService.sendAccessToken(response, newAccessToken);
+				}
 		);
 
+	}*/
+	/**
+	 * Refresh Token이 유효하면 새로운 Access Token을 발급하고, 그렇지 않으면 401 반환
+	 */
+	private void checkRefreshTokenAndReIssueAccessToken(HttpServletResponse response, String refreshToken) {
+		if (!jwtService.isTokenValid(refreshToken)) {
+			log.warn("유효하지 않은 Refresh Token입니다.");
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			return;
+		}
+
+		userJpaRepository.findByRefreshToken(refreshToken)
+				.ifPresentOrElse(user -> {
+					log.warn("Access Token 재발급.");
+					String newAccessToken = jwtService.createAccessToken(user.getEmail());
+					jwtService.sendAccessAndRefreshToken(response, newAccessToken, refreshToken);
+					authenticateUser(newAccessToken);
+				}, () -> {
+					log.warn("Refresh Token을 가진 사용자를 찾을 수 없습니다.");
+					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				});
 	}
 }
