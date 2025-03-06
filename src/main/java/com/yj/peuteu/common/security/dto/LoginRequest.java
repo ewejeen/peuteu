@@ -1,4 +1,4 @@
-package com.yj.peuteu.api.user.dto.request;
+package com.yj.peuteu.common.security.dto;
 
 import lombok.Data;
 

@@ -39,6 +39,7 @@ Access Token이 만료되었을 때 Refresh Token을 재발급할지 여부는 �
    대부분의 보안 시스템에서는 "Sliding Expiration" 방식을 사용한다.
 
    즉, Access Token이 만료될 때 Refresh Token을 검증하고, 일정 조건에 따라 Refresh Token을 갱신하는 방식이다.
+    RTR과 유사한 것 같다
 
 ### 권장 로직
 | 상황                                    | Access Token 재발급 | Refresh Token 재발급 |
@@ -64,3 +65,20 @@ Access Token이 만료되었을 때 Refresh Token을 재발급할지 여부는 �
 4. Refresh Token이 만료되었거나 탈취 가능성이 있는 경우, 재로그인을 강제하는 것이 보안상 가장 안전하다.
 
 **즉, Access Token을 재발급할 때는 기본적으로 Refresh Token을 유지하고, 필요할 때만 새로 발급하는 것이 가장 합리적이다. 🚀**
+
+
+로그인 요청 순서
+- 클라이언트에서 POST /api/login 주소로 로그인 요청을 보낸다.
+  - 이 때 body의 content type은 application/json으로 한다.
+- 서버의 JsonAuthenticationProcessingFilter에서 요청값을 최초로 받는다.
+  - 별도의 LoginController를 정의해 둔 것이 아님을 유의한다.
+  - attemptAuthentication 메서드에서 요청 파라미터가 유효한지 확인 후 authenticate 처리를 한다
+  - 로그인 정보가 올바른 경우
+  - 로그인 정보가 올바르지 않은 경우
+
+1. 클라이언트에서 로그인 요청
+3. JwtAuthenticationFilter 필터링 확인
+   4. 성공 시: LoginSuccessHanlder > onAuthenticationSuccess 실행
+   5. 실패 시: LoginFailureHandler > onAuthenticationFailure 실행
+4. JsonAuthenticationProcessingFilter 및 success, fail 핸들러 확인 
+5. 성공 또는 실패 여부 클라이언트로 반환

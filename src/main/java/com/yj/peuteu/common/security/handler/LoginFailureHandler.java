@@ -1,4 +1,4 @@
-package com.yj.peuteu.common.config.security.handler;
+package com.yj.peuteu.common.security.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yj.peuteu.common.response.ApiResponse;

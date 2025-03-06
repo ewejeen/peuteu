@@ -3,21 +3,17 @@ package com.yj.peuteu.api.user.controller;
 import com.yj.peuteu.api.user.application.FindUserService;
 import com.yj.peuteu.api.user.application.LoginService;
 import com.yj.peuteu.api.user.domain.User;
-import com.yj.peuteu.api.user.dto.request.LoginRequest;
-import com.yj.peuteu.common.config.jwt.JwtService;
-import com.yj.peuteu.common.config.login.annotation.LoggedIn;
+import com.yj.peuteu.common.jwt.util.JwtUtil;
+import com.yj.peuteu.common.login.annotation.LoggedIn;
 import com.yj.peuteu.common.controller.ApiController;
 import com.yj.peuteu.common.response.ApiResponse;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Objects;
 
@@ -28,9 +24,9 @@ public class LoginController {
 
     private final LoginService loginService;
     private final FindUserService findUserService;
-    private final JwtService jwtService;
+    private final JwtUtil jwtService;
 
-    @PostMapping("/login")
+    /*@PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginRequest request, HttpServletResponse response) {
         System.out.println(request);
 
@@ -44,7 +40,7 @@ public class LoginController {
         jwtService.setAccessTokenHeader(response, accessToken);
 
         return ApiResponse.ok();
-    }
+    }*/
 
     @GetMapping("/refresh")
     public ResponseEntity refresh(HttpServletRequest request, @LoggedIn User user) {

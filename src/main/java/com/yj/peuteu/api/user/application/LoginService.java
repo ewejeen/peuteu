@@ -1,7 +1,7 @@
 package com.yj.peuteu.api.user.application;
 
 import com.yj.peuteu.api.user.domain.User;
-import com.yj.peuteu.api.user.dto.request.LoginRequest;
+import com.yj.peuteu.common.security.dto.LoginRequest;
 import com.yj.peuteu.api.user.exception.PasswordNotMatchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class LoginService {
 
-	private final FindUserService findUserService;
+	/*private final FindUserService findUserService;
 	private final PasswordEncoder passwordEncoder;
 
 	public void login(LoginRequest request) {
@@ -21,5 +21,5 @@ public class LoginService {
 			throw new PasswordNotMatchException();
 		}
 		System.out.println("로그인 성공");
-	}
+	}*/
 }

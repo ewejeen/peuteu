@@ -1,7 +1,7 @@
-package com.yj.peuteu.common.config.login.resolver;
+package com.yj.peuteu.common.login.resolver;
 
-import com.yj.peuteu.common.config.jwt.JwtService;
-import com.yj.peuteu.common.config.login.annotation.LoggedIn;
+import com.yj.peuteu.common.jwt.util.JwtUtil;
+import com.yj.peuteu.common.login.annotation.LoggedIn;
 import lombok.AllArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -12,7 +12,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 @AllArgsConstructor
 public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
-    private final JwtService jwtService;
+    private final JwtUtil jwtService;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {

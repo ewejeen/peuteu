@@ -1,4 +1,4 @@
-package com.yj.peuteu.common.config;
+package com.yj.peuteu.common.web;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

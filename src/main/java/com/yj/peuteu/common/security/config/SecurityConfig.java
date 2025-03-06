@@ -1,12 +1,15 @@
-package com.yj.peuteu.common.config.security;
+package com.yj.peuteu.common.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yj.peuteu.api.user.repository.UserJpaRepository;
-import com.yj.peuteu.common.config.jwt.JwtAuthenticationProcessingFilter;
-import com.yj.peuteu.common.config.jwt.JwtService;
-import com.yj.peuteu.common.config.security.handler.LoginFailureHandler;
-import com.yj.peuteu.common.config.security.handler.LoginSuccessJWTProvideHandler;
-import com.yj.peuteu.common.config.security.user.UserDetailsServiceImpl;
+import com.yj.peuteu.common.jwt.filter.JwtAuthenticationFilter;
+import com.yj.peuteu.common.jwt.repository.BlacklistedTokenJpaRepository;
+import com.yj.peuteu.common.jwt.repository.RefreshTokenJpaRepository;
+import com.yj.peuteu.common.jwt.util.JwtUtil;
+import com.yj.peuteu.common.security.filter.JsonAuthenticationProcessingFilter;
+import com.yj.peuteu.common.security.handler.LoginFailureHandler;
+import com.yj.peuteu.common.security.handler.LoginSuccessHandler;
+import com.yj.peuteu.common.security.user.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,8 +40,10 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final ObjectMapper objectMapper;
-    private final JwtService jwtService;
+    private final JwtUtil jwtService;
     private final UserJpaRepository userJpaRepository;
+    private final RefreshTokenJpaRepository refreshTokenJpaRepository;
+    private final BlacklistedTokenJpaRepository blacklistedTokenJpaRepository;
 
     @Bean
     public static PasswordEncoder passwordEncoder() {
@@ -61,19 +66,17 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/api/join", "/api/login", "/error").permitAll()
+                        .requestMatchers("/api/join", "/api/login", "/api/logout", "/error").permitAll()
 //						.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .anyRequest().authenticated())
-                .logout((logout) -> logout
-                        .logoutSuccessUrl("/login")
-                        .invalidateHttpSession(true))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
         http
                 .addFilterAfter(jsonUsernamePasswordLoginFilter(), LogoutFilter.class)
-                .addFilterBefore(jwtAuthenticationProcessingFilter(), JsonUsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), JsonAuthenticationProcessingFilter.class);
 
         http
                 .cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer
@@ -107,8 +110,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public LoginSuccessJWTProvideHandler loginSuccessJWTProvideHandler() {
-        return new LoginSuccessJWTProvideHandler(jwtService, userJpaRepository, objectMapper);
+    public LoginSuccessHandler loginSuccessJWTProvideHandler() {
+        return new LoginSuccessHandler(jwtService, userJpaRepository, refreshTokenJpaRepository, objectMapper);
     }
 
     @Bean
@@ -117,8 +120,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordLoginFilter() {
-        JsonUsernamePasswordAuthenticationFilter jsonUsernamePasswordLoginFilter = new JsonUsernamePasswordAuthenticationFilter(objectMapper);
+    public JsonAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter() {
+        JsonAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter = new JsonAuthenticationProcessingFilter(objectMapper);
         jsonUsernamePasswordLoginFilter.setAuthenticationManager(authenticationManager());
         jsonUsernamePasswordLoginFilter.setAuthenticationSuccessHandler(loginSuccessJWTProvideHandler());
         jsonUsernamePasswordLoginFilter.setAuthenticationFailureHandler(loginFailureHandler());
@@ -126,9 +129,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationProcessingFilter jwtAuthenticationProcessingFilter() {
-        JwtAuthenticationProcessingFilter jsonUsernamePasswordLoginFilter = new JwtAuthenticationProcessingFilter(jwtService, userJpaRepository);
-
-        return jsonUsernamePasswordLoginFilter;
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtService, userJpaRepository, refreshTokenJpaRepository, blacklistedTokenJpaRepository);
     }
 }
