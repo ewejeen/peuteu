@@ -35,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserJpaRepository userJpaRepository;
     private final RefreshTokenJpaRepository refreshTokenJpaRepository;
     private final BlacklistedTokenJpaRepository blacklistedTokenJpaRepository;
-    private final List<String> WHITELIST = List.of("/api/login", "/api/join", "/api/logout");
+    private final List<String> WHITELIST = List.of("/api/login", "/api/join", "/api/logout", "/api/refresh");
     private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
 
     /**
@@ -66,14 +66,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Optional<String> accessToken = jwtService.extractAccessToken(request);
         if (accessToken.isPresent()) {
             String accessTokenValue = accessToken.get();
-            
+
             // blacklist인 경우 오류 발생
             if (blacklistedTokenJpaRepository.existsByToken(accessTokenValue)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
-                // 현재 500 반환되는데 403 반환되게 수정
-//                throw new JWTVerificationException("Invalid Token (blacklisted)");
-//                return;
             }
 
             // 유효한 경우 인증 성공
@@ -83,18 +80,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
         }
-        /*if (accessToken.isPresent() && jwtService.isTokenValid(accessToken.get())) {
-            authenticateUser(accessToken.get());
-            filterChain.doFilter(request, response);
-            return;
-        }*/
+
+        // Access Token이 만료된 경우 401 반환 → 프론트에서 /api/refresh 호출
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
         // Access Token 만료된 경우 쿠키의 Refresh Token 검증
-        Optional<String> refreshToken = jwtService.extractRefreshToken(request);
-
-        refreshToken.ifPresent(token -> checkRefreshTokenAndReIssueAccessToken(response, token));
-
-        filterChain.doFilter(request, response);
+//        jwtService.extractRefreshToken(request)
+//                .ifPresent(token -> checkRefreshTokenAndReIssueAccessToken(response, token));
+//
+//        filterChain.doFilter(request, response);
     }
 
     // Access Token이 유효한 경우 유저 인증 처리
@@ -136,9 +130,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     if (seconds <= jwtService.getMinRefreshAgeInDay()) {
                         log.info("리프레시 재발급!");
+                        refreshTokenJpaRepository.deleteById(token.getId()); // 기존 리프레시는 삭제
                         String newRefreshToken = jwtService.createRefreshToken();
                         refreshTokenJpaRepository.save(new RefreshToken(null, token.getUserId(), newRefreshToken, jwtService.getTokenExpiresAt(newRefreshToken)));
-                        refreshTokenJpaRepository.deleteById(token.getId()); // 기존 리프레시는 삭제
 
                         jwtService.sendAccessAndRefreshToken(response, newAccessToken, newRefreshToken);
                     } else {

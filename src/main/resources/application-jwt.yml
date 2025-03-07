@@ -7,9 +7,9 @@ jwt:
 #    age: 1800 # 30분
     age: 5
     header: Authorization
-    subject: AccessToken
+    subject: accessToken
 
   refresh:
     age: 1209600 # 14일 (60 * 60 * 24 * 14)
     minAgeInDay: 14
-    subject: RefreshToken
+    subject: refreshToken

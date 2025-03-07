@@ -68,7 +68,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/api/join", "/api/login", "/api/logout", "/error").permitAll()
+                        .requestMatchers("/api/join", "/api/login", "/api/logout", "/api/refresh", "/error").permitAll()
 //						.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
