@@ -17,16 +17,19 @@ public class LogoutService {
     private final RefreshTokenJpaRepository refreshTokenJpaRepository;
     private final BlacklistedTokenJpaRepository blacklistedTokenJpaRepository;
 
-
+    /**
+     * 사용자 로그아웃 처리
+     *
+     * @param request
+     */
     @Transactional
     public void logout(HttpServletRequest request) {
         // Access Token 블랙리스트 추가
-        jwtUtil.extractAccessToken(request)
+        jwtUtil.extractAccessTokenFromHeader(request)
                 .ifPresent(token -> blacklistedTokenJpaRepository.save(new BlacklistedToken(null, token, jwtUtil.getTokenExpiresAt(token))));
 
         // Refresh Token 삭제
-        jwtUtil.extractRefreshToken(request)
-                .ifPresent(token -> refreshTokenJpaRepository.deleteByToken(token));
+        jwtUtil.extractRefreshTokenFromCookie(request)
+                .ifPresent(refreshTokenJpaRepository::deleteByToken);
     }
-
 }

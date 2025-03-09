@@ -1,7 +1,7 @@
 package com.yj.peuteu.common.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yj.peuteu.common.security.dto.LoginRequest;
+import com.yj.peuteu.common.security.dto.request.LoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpMethod;
@@ -17,7 +17,7 @@ import java.io.IOException;
 
 /**
  * Spring Security의 JSON 요청 기반 로그인 처리 필터
- * - POST /api/login 주소로 로그인 요청을 받아 인증을 수행한다.
+ * - POST /api/login 주소로 로그인 요청을 받아 인증을 수행
  */
 public class JsonAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
 
@@ -30,7 +30,7 @@ public class JsonAuthenticationProcessingFilter extends AbstractAuthenticationPr
     }
 
     /**
-     * JSON 형식의 로그인 요청 파라미터를 받아 인증을 수행한다/
+     * JSON 형식의 로그인 요청 파라미터를 받아 인증을 수행
      * - 파라미터가 JSON이 아니면 Exception 발생
      * - 파라미터 값이 하나라도 비어 있다면 Exception 발생
      *
