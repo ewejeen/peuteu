@@ -10,14 +10,14 @@ import java.time.LocalDateTime;
 
 @Getter
 public class ProteinMonthStatListResponse {
-	private String date;
-	private double intake;
-	private double targetIntake;
-	private boolean isSuccess;
+	private final String date;
+	private final Double intake;
+	private final Double targetIntake;
+	private final Boolean isSuccess;
 
 	@QueryProjection
 	@Builder
-	public ProteinMonthStatListResponse(LocalDateTime date, double intake, double targetIntake, boolean isSuccess) {
+	public ProteinMonthStatListResponse(LocalDateTime date, Double intake, Double targetIntake, Boolean isSuccess) {
 		this.date = LocalDateTimeConverter.toStringDate(date);
 		this.intake = intake;
 		this.targetIntake = targetIntake;

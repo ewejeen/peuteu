@@ -6,7 +6,9 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.yj.peuteu.api.protein.domain.QTargetIntake;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
+import com.yj.peuteu.api.protein.dto.request.FindProteinMonthStatListRequest;
 import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
+import com.yj.peuteu.api.protein.dto.request.FindProteinSumOfDayRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinSearchListResponse;
@@ -75,7 +77,7 @@ public class ProteinQdslRepository {
 		return new PageImpl<>(list, pageable, count);
 	}
 
-	public Double findMyProteinSumOfDay(String userId, String targetDate) {
+	public Double findMyProteinSumOfDay(FindProteinSumOfDayRequest request) {
 		return queryFactory
 				.select(
 						protein.intake.sum()
@@ -83,8 +85,8 @@ public class ProteinQdslRepository {
 				.from(protein)
 				.leftJoin(protein.user, user)
 				.where(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)),
-						user.id.eq(userId),
-						eqTargetDate(protein.intakeTime, targetDate)
+						user.id.eq(request.getUserId()),
+						eqTargetDate(protein.intakeTime, request.getTargetDate())
 				)
 				.fetchOne();
 	}
@@ -107,9 +109,9 @@ public class ProteinQdslRepository {
 
 	}
 
-	public List<ProteinMonthStatListResponse> findProteinMonthStatList(String userId, int targetYear, int targetMonth) {
-		LocalDateTime firstTimeOfMonth = getFirstTimeOfMonth(targetYear, targetMonth);
-		LocalDateTime lastTimeOfMonth = getLastTimeOfMonth(targetYear, targetMonth);
+	public List<ProteinMonthStatListResponse> findProteinMonthStatList(FindProteinMonthStatListRequest request) {
+		LocalDateTime firstTimeOfMonth = getFirstTimeOfMonth(request.getTargetYear(), request.getTargetMonth());
+		LocalDateTime lastTimeOfMonth = getLastTimeOfMonth(request.getTargetYear(), request.getTargetMonth());
 
 		QTargetIntake subIntake = new QTargetIntake("sub");
 
@@ -134,17 +136,20 @@ public class ProteinQdslRepository {
 								.where(subIntake.createdAt.loe(protein.intakeTime))
 								.orderBy(subIntake.createdAt.desc())
 						))
-				)
+				).coalesce(false)
 			)
 			.from(protein)
 			.leftJoin(protein.user, user)
 			.where(
-				user.id.eq(userId)
+				user.id.eq(request.getUserId())
 					.and(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)))
 					.and(protein.intakeTime.between(firstTimeOfMonth, lastTimeOfMonth))
 			)
-			.groupBy(Expressions.dateTemplate(
-				LocalDate.class, "DATE_FORMAT({0}, {1})", protein.intakeTime, "%Y-%m-%d"))
+			.groupBy(
+					protein.intakeTime.year(),
+					protein.intakeTime.month(),
+					protein.intakeTime.dayOfMonth()
+			)
 			.fetch();
 
 		// 목표를 달성한 날짜만 필터링하여 목록 생성
@@ -158,7 +163,6 @@ public class ProteinQdslRepository {
 				.build())
 			.collect(Collectors.toList());
 	}
-
 
 	public Integer countTargetCompletedDates(String userId, int targetYear, int targetMonth) {
 		LocalDateTime firstTimeOfMonth = getFirstTimeOfMonth(targetYear, targetMonth);
@@ -186,10 +190,13 @@ public class ProteinQdslRepository {
 								.and(protein.deleteYn.isNull().or(protein.deleteYn.eq(DeleteYn.N)))
 								.and(protein.intakeTime.between(firstTimeOfMonth, lastTimeOfMonth))
 				)
-				.groupBy(user.id, Expressions.dateTemplate(
-						LocalDate.class, "DATE_FORMAT({0}, {1})", protein.intakeTime, "%Y-%m-%d"))
+				.groupBy(
+						user.id,
+						protein.intakeTime.year(),
+						protein.intakeTime.month(),
+						protein.intakeTime.dayOfMonth()
+				)
 				.fetch();
-
 
 		return targetReachedList.stream()
 				.mapToInt(reached -> reached ? 1 : 0)
@@ -200,7 +207,7 @@ public class ProteinQdslRepository {
 		return queryFactory
 			.select(
 				new QProteinSumListByDatesResponse(
-					formatDateTimeString(protein.intakeTime),
+					protein.intakeTime,
 					protein.intake.sum()
 				)
 			)
@@ -210,7 +217,11 @@ public class ProteinQdslRepository {
 				user.id.eq(request.getUserId()),
 				inTargetDate(protein.intakeTime, request.getTargetDates())
 			)
-			.groupBy(formatDateTimeString(protein.intakeTime))
+			.groupBy(
+					protein.intakeTime.year(),
+					protein.intakeTime.month(),
+					protein.intakeTime.dayOfMonth()
+			)
 			.orderBy(protein.intakeTime.asc())
 			.fetch();
 	}
@@ -247,11 +258,23 @@ public class ProteinQdslRepository {
 		if (targetDates == null) {
 			return null;
 		}
-		return formatDateTimeString(intakeTime).in(targetDates);
-	}
 
-	private DateTemplate<String> formatDateTimeString(DateTimePath<LocalDateTime> dateTime) {
-		return Expressions.dateTemplate(String.class, "DATE_FORMAT({0}, {1})", dateTime, "%Y-%m-%d");
+		// yyyy-MM-dd 형식의 String으로 변환
+		StringExpression stringIntakeTime = intakeTime.year().stringValue()
+				.concat("-")
+				.concat(new CaseBuilder()
+						.when(intakeTime.month().lt(10)) // 한 자리 수 월 처리
+						.then("0")
+						.otherwise(""))
+				.concat(intakeTime.month().stringValue())
+				.concat("-")
+				.concat(new CaseBuilder()
+						.when(intakeTime.dayOfMonth().lt(10)) // 한 자리 수 일 처리
+						.then("0")
+						.otherwise(""))
+				.concat(intakeTime.dayOfMonth().stringValue());
+
+		return stringIntakeTime.in(targetDates);
 	}
 
 	private LocalDateTime getFirstTimeOfMonth(int targetYear, int targetMonth) {

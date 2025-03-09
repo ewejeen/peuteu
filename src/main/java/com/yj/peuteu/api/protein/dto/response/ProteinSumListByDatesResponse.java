@@ -2,8 +2,11 @@ package com.yj.peuteu.api.protein.dto.response;
 
 import com.querydsl.core.annotations.QueryProjection;
 
+import com.yj.peuteu.common.util.LocalDateTimeConverter;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.time.LocalDateTime;
 
 @Getter
 public class ProteinSumListByDatesResponse {
@@ -12,8 +15,8 @@ public class ProteinSumListByDatesResponse {
 
 	@Builder
 	@QueryProjection
-	public ProteinSumListByDatesResponse(String date, Double sum) {
-		this.date = date;
+	public ProteinSumListByDatesResponse(LocalDateTime date, Double sum) {
+		this.date = LocalDateTimeConverter.toStringDate(date);
 		this.sum = sum;
 	}
 }
