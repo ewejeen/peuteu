@@ -6,7 +6,6 @@ import com.yj.peuteu.common.jwt.domain.RefreshToken;
 import com.yj.peuteu.common.jwt.domain.TokenType;
 import com.yj.peuteu.common.jwt.domain.UserTokenInfo;
 import com.yj.peuteu.common.jwt.dto.response.TokenRefreshResponse;
-import com.yj.peuteu.common.jwt.repository.RefreshTokenJpaRepository;
 import com.yj.peuteu.common.jwt.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 public class AccessTokenRefreshService {
     private final JwtUtil jwtUtil;
     private final FindUserService findUserService;
-    private final RefreshTokenJpaRepository refreshTokenJpaRepository;
     private final RefreshTokenService refreshTokenService;
 
     /**
@@ -51,13 +49,11 @@ public class AccessTokenRefreshService {
         }
 
         String refreshToken = refreshTokenOpt.get();
-        Optional<RefreshToken> tokenOpt = refreshTokenJpaRepository.findByToken(refreshToken);
+        RefreshToken token = refreshTokenService.findByToken(refreshToken);
 
-        if (tokenOpt.isEmpty()) {
+        if (token == null) {
             return Optional.empty();
         }
-
-        RefreshToken token = tokenOpt.get();
 
         // 액세스 토큰 재발급
         User user = findUserService.findUserEntity(token.getUserId());

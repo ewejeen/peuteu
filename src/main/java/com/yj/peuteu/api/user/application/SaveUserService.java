@@ -43,7 +43,7 @@ public class SaveUserService {
 	}
 
 	/**
-	 * 회원가입
+	 * 회원 수정
 	 * @param request
 	 * @return
 	 */

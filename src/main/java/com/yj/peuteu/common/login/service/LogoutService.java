@@ -1,8 +1,8 @@
 package com.yj.peuteu.common.login.service;
 
 import com.yj.peuteu.common.jwt.domain.BlacklistedToken;
-import com.yj.peuteu.common.jwt.repository.BlacklistedTokenJpaRepository;
-import com.yj.peuteu.common.jwt.repository.RefreshTokenJpaRepository;
+import com.yj.peuteu.common.jwt.service.BlacklistedTokenService;
+import com.yj.peuteu.common.jwt.service.RefreshTokenService;
 import com.yj.peuteu.common.jwt.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class LogoutService {
 
     private final JwtUtil jwtUtil;
-    private final RefreshTokenJpaRepository refreshTokenJpaRepository;
-    private final BlacklistedTokenJpaRepository blacklistedTokenJpaRepository;
+
+    private final RefreshTokenService refreshTokenService;
+    private final BlacklistedTokenService blacklistedTokenService;
 
     /**
      * 사용자 로그아웃 처리
@@ -26,10 +27,15 @@ public class LogoutService {
     public void logout(HttpServletRequest request) {
         // Access Token 블랙리스트 추가
         jwtUtil.extractAccessTokenFromHeader(request)
-                .ifPresent(token -> blacklistedTokenJpaRepository.save(new BlacklistedToken(null, token, jwtUtil.getTokenExpiresAt(token))));
+                .ifPresent(token ->
+                        blacklistedTokenService.saveTokenToBlacklist(BlacklistedToken.builder()
+                                .token(token)
+                                .expiresAt(jwtUtil.getTokenExpiresAt(token))
+                                .build())
+                );
 
         // Refresh Token 삭제
         jwtUtil.extractRefreshTokenFromCookie(request)
-                .ifPresent(refreshTokenJpaRepository::deleteByToken);
+                .ifPresent(refreshTokenService::deleteRefreshTokenByToken);
     }
 }

@@ -4,10 +4,10 @@ import com.yj.peuteu.api.user.domain.Gender;
 import com.yj.peuteu.api.user.domain.Goal;
 import com.yj.peuteu.api.user.domain.User;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
 @Builder
-@Data
+@Getter
 public class FindUserResponse {
     private String id;
     private String email;

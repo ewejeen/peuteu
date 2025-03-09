@@ -1,5 +1,6 @@
 package com.yj.peuteu.common.jwt.service;
 
+import com.yj.peuteu.common.jwt.domain.BlacklistedToken;
 import com.yj.peuteu.common.jwt.repository.BlacklistedTokenJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,5 +19,14 @@ public class BlacklistedTokenService {
      */
     public boolean existsByAccessToken(String accessToken) {
         return blacklistedTokenJpaRepository.existsByToken(accessToken);
+    }
+
+    /**
+     * 액세스 토큰을 블랙리스트에 추가
+     *
+     * @param blacklistedToken
+     */
+    public void saveTokenToBlacklist(BlacklistedToken blacklistedToken) {
+        blacklistedTokenJpaRepository.save(blacklistedToken);
     }
 }

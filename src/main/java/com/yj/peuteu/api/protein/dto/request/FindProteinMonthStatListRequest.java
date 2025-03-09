@@ -1,16 +1,15 @@
 package com.yj.peuteu.api.protein.dto.request;
 
-import java.util.List;
-
 import com.yj.peuteu.api.user.dto.request.UserAssignRequest;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class FindProteinSumListByDatesRequest implements UserAssignRequest {
+public class FindProteinMonthStatListRequest implements UserAssignRequest {
     private String userId;
-    private List<String> targetDates;
+    private int targetYear;
+    private int targetMonth;
 
     @Override
     public void assignUserId(String userId) {

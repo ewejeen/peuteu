@@ -4,7 +4,9 @@ import java.util.List;
 
 import com.yj.peuteu.api.protein.domain.Protein;
 import com.yj.peuteu.api.protein.dto.request.FindProteinListRequest;
+import com.yj.peuteu.api.protein.dto.request.FindProteinMonthStatListRequest;
 import com.yj.peuteu.api.protein.dto.request.FindProteinSumListByDatesRequest;
+import com.yj.peuteu.api.protein.dto.request.FindProteinSumOfDayRequest;
 import com.yj.peuteu.api.protein.dto.response.ProteinListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinMonthStatListResponse;
 import com.yj.peuteu.api.protein.dto.response.ProteinSearchListResponse;
@@ -33,19 +35,17 @@ public class FindProteinService {
 	 * @return
 	 */
 	public Page<ProteinListResponse> findMyProteinListByDate(FindProteinListRequest request, Pageable pageable) {
-
 		return proteinQdslRepository.findPageByDate(request, pageable);
 	}
 
 	/**
 	 * 해당 날짜의 본인 프로틴 총합 조회
 	 *
-	 * @param targetDate
+	 * @param request
 	 * @return
 	 */
-	public Double findMyProteinSumOfDay(String targetDate) {
-		String userId = "somxkosub2no";
-		return proteinQdslRepository.findMyProteinSumOfDay(userId, targetDate);
+	public Double findMyProteinSumOfDay(FindProteinSumOfDayRequest request) {
+		return proteinQdslRepository.findMyProteinSumOfDay(request);
 	}
 
 	/**
@@ -56,7 +56,7 @@ public class FindProteinService {
 	 */
 	public Protein findProteinById(Long proteinId) {
 		return proteinJpaRepository.findById(proteinId)
-				.orElseThrow(() -> new ProteinNotFoundException());
+				.orElseThrow(ProteinNotFoundException::new);
 	}
 
 	/**
@@ -64,32 +64,29 @@ public class FindProteinService {
 	 *
 	 * @return
 	 */
-	public Double findMyProteinTarget() {
-		String userId = "somxkosub2no";
+	public Double findMyProteinTarget(String userId) {
 		return proteinQdslRepository.findMyProteinTarget(userId);
 	}
 
 	/**
 	 * 선택한 달의 프로틴 목표 달성일 목록
 	 *
-	 * @param targetYear
-	 * @param targetMonth
+	 * @param request
 	 * @return
 	 */
-	public List<ProteinMonthStatListResponse> findProteinMonthStatList(int targetYear, int targetMonth) {
-		String userId = "somxkosub2no";
-		return proteinQdslRepository.findProteinMonthStatList(userId, targetYear, targetMonth);
+	public List<ProteinMonthStatListResponse> findProteinMonthStatList(FindProteinMonthStatListRequest request) {
+		return proteinQdslRepository.findProteinMonthStatList(request);
 	}
 
 	/**
 	 * 선택한 달의 프로틴 목표 달성일 카운트
 	 *
+	 * @param userId
 	 * @param targetYear
 	 * @param targetMonth
 	 * @return
 	 */
-	public Integer countTargetCompletedDates(int targetYear, int targetMonth) {
-		String userId = "somxkosub2no";
+	public Integer countTargetCompletedDates(String userId, int targetYear, int targetMonth) {
 		return proteinQdslRepository.countTargetCompletedDates(userId, targetYear, targetMonth);
 	}
 
@@ -100,19 +97,17 @@ public class FindProteinService {
 	 * @return
 	 */
 	public List<ProteinSumListByDatesResponse> findProteinSumListByDates(FindProteinSumListByDatesRequest request) {
-		String userId = "somxkosub2no";
-		request.setUserId(userId);
 		return proteinQdslRepository.findProteinSumListByDates(request);
 	}
 
 	/**
 	 * 이름으로 음식 검색
 	 *
+	 * @param userId
 	 * @param name
 	 * @return
 	 */
-	public List<ProteinSearchListResponse> findProteinInfoByName(String name) {
-		String userId = "somxkosub2no";
+	public List<ProteinSearchListResponse> findProteinInfoByName(String userId, String name) {
 		return proteinQdslRepository.findProteinInfoByName(userId, name);
 	}
 }

@@ -18,6 +18,7 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
 		log.info("로그인 실패: {}", exception.getMessage());
 		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		response.getWriter().write("fail");
+		response.setContentType("application/json;charset=utf-8");
+		response.getWriter().write("로그인 정보가 올바르지 않습니다.");
 	}
 }

@@ -2,6 +2,7 @@ package com.yj.peuteu.common.jwt.filter;
 
 import com.yj.peuteu.api.user.application.FindUserService;
 import com.yj.peuteu.common.jwt.domain.TokenType;
+import com.yj.peuteu.common.jwt.domain.UserTokenInfo;
 import com.yj.peuteu.common.jwt.service.BlacklistedTokenService;
 import com.yj.peuteu.common.jwt.util.JwtUtil;
 import com.yj.peuteu.common.security.user.UserDetailsImpl;
@@ -74,16 +75,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Access Token이 유효하지 않은 경우 401 반환 → 프론트에서 /api/refresh 호출
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.getWriter().write("Token Expired");
     }
 
     // Access Token이 유효한 경우 유저 인증 처리
     private void authenticateUser(String accessToken) {
-        jwtUtil.extractEmailFromAccessToken(accessToken)
-                .ifPresent((email) -> {
-                    UserDetailsImpl userDetails = new UserDetailsImpl(findUserService.findUserEntityByEmail(email));
-                    Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, authoritiesMapper.mapAuthorities(userDetails.getAuthorities()));
+        UserTokenInfo userTokenInfo = jwtUtil.extractUserInfoFromAccessToken(accessToken);
+        UserDetailsImpl userDetails = new UserDetailsImpl(findUserService.findUserEntityByEmail(userTokenInfo.getEmail()));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null, authoritiesMapper.mapAuthorities(userDetails.getAuthorities()));
 
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                });
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

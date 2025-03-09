@@ -106,7 +106,7 @@ public class JwtUtil {
      * @param accessToken
      * @return
      */
-    public Optional<String> extractEmailFromAccessToken(String accessToken) {
+    public UserTokenInfo extractUserInfoFromAccessToken(String accessToken) {
         try {
             Map<String, Object> userMap = JWT.require(Algorithm.HMAC512(secret))
                     .build()
@@ -114,10 +114,10 @@ public class JwtUtil {
                     .getClaim(jwtProperties.getClaim())
                     .asMap();
 
-            return Optional.ofNullable((String) userMap.get("email"));
+            return objectMapper.convertValue(userMap, UserTokenInfo.class);
         } catch (Exception e) {
             log.error(e.getMessage());
-            return Optional.empty();
+            return null;
         }
     }
 

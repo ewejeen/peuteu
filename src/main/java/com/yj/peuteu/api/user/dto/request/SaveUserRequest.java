@@ -1,9 +1,11 @@
 package com.yj.peuteu.api.user.dto.request;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-@Data
-public class SaveUserRequest {
+@Getter
+@AllArgsConstructor
+public class SaveUserRequest implements UserAssignRequest {
     private String id;
     private String email;
     private String password;
@@ -12,4 +14,9 @@ public class SaveUserRequest {
     private Double height;
     private Double weight;
     private String goal;
+
+    @Override
+    public void assignUserId(String userId) {
+        this.id = userId;
+    }
 }

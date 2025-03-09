@@ -31,16 +31,6 @@ public class User {
 	@Enumerated(EnumType.STRING)
 	private Goal goal;
 
-	private String refreshToken;
-
-	public void updateRefreshToken(String refreshToken) {
-		this.refreshToken = refreshToken;
-	}
-
-	public void destroyRefreshToken() {
-		this.refreshToken = null;
-	}
-
 	// 패스워드 암호화
 	public void encodePassword(PasswordEncoder passwordEncoder) {
 		this.password = passwordEncoder.encode(password);
