@@ -6,6 +6,7 @@ import com.yj.peuteu.common.jwt.filter.JwtAuthenticationFilter;
 import com.yj.peuteu.common.jwt.service.BlacklistedTokenService;
 import com.yj.peuteu.common.jwt.service.RefreshTokenService;
 import com.yj.peuteu.common.jwt.util.JwtUtil;
+import com.yj.peuteu.common.login.service.FindNoAuthRequiredUrlService;
 import com.yj.peuteu.common.security.filter.JsonAuthenticationProcessingFilter;
 import com.yj.peuteu.common.security.handler.LoginFailureHandler;
 import com.yj.peuteu.common.security.handler.LoginSuccessHandler;
@@ -43,15 +44,20 @@ public class SecurityConfig {
     private final BlacklistedTokenService blacklistedTokenService;
     private final FindUserService findUserService;
 
+    private final FindNoAuthRequiredUrlService findNoAuthRequiredUrlService;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // @NoAuthRequired 메서드는 permitAll
+        String[] array = findNoAuthRequiredUrlService.getNoAuthRequiredUrls().toArray(new String[0]);
+
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/api/join", "/api/login", "/api/logout", "/api/refresh", "/error").permitAll()
+                        .requestMatchers(array).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -126,6 +132,6 @@ public class SecurityConfig {
     // 매 요청 시 권한 인증 필터
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil, findUserService, blacklistedTokenService);
+        return new JwtAuthenticationFilter(jwtUtil, findUserService, blacklistedTokenService, findNoAuthRequiredUrlService);
     }
 }

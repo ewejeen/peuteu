@@ -5,6 +5,7 @@ import com.yj.peuteu.common.jwt.domain.TokenType;
 import com.yj.peuteu.common.jwt.domain.UserTokenInfo;
 import com.yj.peuteu.common.jwt.service.BlacklistedTokenService;
 import com.yj.peuteu.common.jwt.util.JwtUtil;
+import com.yj.peuteu.common.login.service.FindNoAuthRequiredUrlService;
 import com.yj.peuteu.common.security.user.UserDetailsImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,9 +31,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final FindUserService findUserService;
     private final BlacklistedTokenService blacklistedTokenService;
+    private final FindNoAuthRequiredUrlService findNoAuthRequiredUrlService;
 
     private GrantedAuthoritiesMapper authoritiesMapper = new NullAuthoritiesMapper();
-    private final List<String> WHITELIST = List.of("/api/login", "/api/join", "/api/logout", "/api/refresh");
 
     /**
      * 매 요청 시마다 로그인 여부를 확인<br>
@@ -50,8 +51,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // whitelist에 있는 경우 로그인 불필요
-        if (WHITELIST.contains(request.getRequestURI())) {
+        // 로그인 불필요 API인 경우 return (@NoAuthRequired)
+        List<String> noAuthUrls = findNoAuthRequiredUrlService.getNoAuthRequiredUrls();
+        if (noAuthUrls.contains(request.getRequestURI())) {
             filterChain.doFilter(request, response);
             return;
         }
