@@ -24,7 +24,7 @@ public class FindNoAuthRequiredUrlService {
      * - 해당 URL은 권한 미체크 (로그아웃 상태에서도 이용 가능)
      */
     public List<String> getNoAuthRequiredUrls() {
-        return mapping.getHandlerMethods().entrySet().stream()
+        List<String> urls = mapping.getHandlerMethods().entrySet().stream()
                 .filter(entry -> entry.getValue().hasMethodAnnotation(NoAuthRequired.class))
                 .map(entry -> {
                     Set<PathPattern> patterns = entry.getKey().getPathPatternsCondition().getPatterns();
@@ -32,5 +32,10 @@ public class FindNoAuthRequiredUrlService {
                 })
                 .filter(url -> url != null)
                 .collect(Collectors.toList());
+
+        // 로그인 API는 시큐리티에서 처리하므로 별도 추가
+        urls.add("/api/login");
+
+        return urls;
     }
 }
