@@ -2,6 +2,7 @@ package com.yj.peuteu.api.user.application;
 
 import com.yj.peuteu.api.user.domain.User;
 import com.yj.peuteu.api.user.dto.request.ValidatePasswordRequest;
+import com.yj.peuteu.api.user.dto.response.CheckDuplicateResponse;
 import com.yj.peuteu.api.user.dto.response.FindUserResponse;
 import com.yj.peuteu.api.user.exception.UserNotFoundException;
 import com.yj.peuteu.api.user.repository.UserJpaRepository;
@@ -12,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -55,5 +58,19 @@ public class FindUserService {
 			return false;
 		}
 		return true;
+	}
+
+	public CheckDuplicateResponse checkDuplicatedEmail(String email) {
+		return checkDuplicate(userJpaRepository::findByEmail, email);
+	}
+
+	public CheckDuplicateResponse checkDuplicatedNickname(String nickname) {
+		return checkDuplicate(userJpaRepository::findByNickname, nickname);
+	}
+
+	private CheckDuplicateResponse checkDuplicate(Function<String, Optional<User>> findByField, String value) {
+		return findByField.apply(value)
+				.map(user -> new CheckDuplicateResponse(true))
+				.orElseGet(() -> new CheckDuplicateResponse(false));
 	}
 }

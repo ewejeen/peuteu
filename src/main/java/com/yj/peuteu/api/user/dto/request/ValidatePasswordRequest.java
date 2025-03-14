@@ -1,14 +1,11 @@
 package com.yj.peuteu.api.user.dto.request;
 
+import lombok.Builder;
 import lombok.Getter;
 
+@Builder
 @Getter
-public class ValidatePasswordRequest implements UserAssignRequest{
+public class ValidatePasswordRequest {
     private String userId;
     private String password;
-
-    @Override
-    public void assignUserId(String userId) {
-        this.userId = userId;
-    }
 }
