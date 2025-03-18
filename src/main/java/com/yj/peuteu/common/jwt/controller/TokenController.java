@@ -2,6 +2,7 @@ package com.yj.peuteu.common.jwt.controller;
 
 import com.yj.peuteu.common.jwt.service.AccessTokenRefreshService;
 import com.yj.peuteu.common.controller.ApiController;
+import com.yj.peuteu.common.login.annotation.NoAuthRequired;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class TokenController {
      * @param response
      * @return
      */
+    @NoAuthRequired
     @PostMapping("/refresh")
     public ResponseEntity refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
         return jwtService.refreshAccessToken(request, response)
