@@ -102,11 +102,11 @@ public class ProteinQdslRepository {
 						targetIntake.createdAt.eq(
 						JPAExpressions.select(subIntake.createdAt.max())
 								.from(subIntake)
-								.where(subIntake.createdAt.loe(LocalDateTime.now()))
-								.orderBy(subIntake.createdAt.desc())
+								.where(subIntake.createdAt.loe(LocalDateTime.now()),
+										subIntake.user.id.eq(userId)
+								)
 				))
 				.fetchOne();
-
 	}
 
 	public List<ProteinMonthStatListResponse> findProteinMonthStatList(FindProteinMonthStatListRequest request) {
@@ -117,15 +117,16 @@ public class ProteinQdslRepository {
 
 		List<Tuple> result = queryFactory
 			.select(
-				protein.intakeTime,
+				Expressions.dateTemplate(LocalDate.class, "cast({0} as date)", protein.intakeTime),
 				protein.intake.sum(),
 				JPAExpressions.select(targetIntake.target)
 					.from(targetIntake)
 					.where(targetIntake.createdAt.eq(
 						JPAExpressions.select(subIntake.createdAt.max())
 							.from(subIntake)
-							.where(subIntake.createdAt.loe(protein.intakeTime))
-							.orderBy(subIntake.createdAt.desc())
+							.where(subIntake.createdAt.loe(protein.intakeTime),
+									subIntake.user.id.eq(request.getUserId())
+							)
 					)),
 				protein.intake.sum().goe(
 					JPAExpressions.select(targetIntake.target)
@@ -133,8 +134,9 @@ public class ProteinQdslRepository {
 						.where(targetIntake.createdAt.eq(
 							JPAExpressions.select(subIntake.createdAt.max())
 								.from(subIntake)
-								.where(subIntake.createdAt.loe(protein.intakeTime))
-								.orderBy(subIntake.createdAt.desc())
+								.where(subIntake.createdAt.loe(protein.intakeTime),
+										subIntake.user.id.eq(request.getUserId())
+								)
 						))
 				).coalesce(false)
 			)
@@ -146,9 +148,8 @@ public class ProteinQdslRepository {
 					.and(protein.intakeTime.between(firstTimeOfMonth, lastTimeOfMonth))
 			)
 			.groupBy(
-					protein.intakeTime.year(),
-					protein.intakeTime.month(),
-					protein.intakeTime.dayOfMonth()
+//					formatDateTimeToString(protein.intakeTime)
+				Expressions.dateTemplate(LocalDate.class, "cast({0} as date)", protein.intakeTime)
 			)
 			.fetch();
 
@@ -156,7 +157,7 @@ public class ProteinQdslRepository {
 		return result.stream()
 			// .filter(tuple -> tuple.get(3, Boolean.class))
 			.map(tuple -> ProteinMonthStatListResponse.builder()
-				.date(tuple.get(0, LocalDateTime.class))
+				.date(tuple.get(0, java.sql.Date.class).toLocalDate())
 				.intake(tuple.get(1, Double.class))
 				.targetIntake(tuple.get(2, Double.class))
 				.isSuccess(tuple.get(3, Boolean.class))
@@ -178,8 +179,8 @@ public class ProteinQdslRepository {
 										.where(targetIntake.createdAt.eq(
 												JPAExpressions.select(subIntake.createdAt.max())
 														.from(subIntake)
-														.where(subIntake.createdAt.loe(protein.intakeTime))
-														.orderBy(subIntake.createdAt.desc())
+														.where(subIntake.createdAt.loe(protein.intakeTime),
+																subIntake.user.id.eq(userId))
 										))
 						)
 				)
@@ -260,19 +261,7 @@ public class ProteinQdslRepository {
 		}
 
 		// yyyy-MM-dd 형식의 String으로 변환
-		StringExpression stringIntakeTime = intakeTime.year().stringValue()
-				.concat("-")
-				.concat(new CaseBuilder()
-						.when(intakeTime.month().lt(10)) // 한 자리 수 월 처리
-						.then("0")
-						.otherwise(""))
-				.concat(intakeTime.month().stringValue())
-				.concat("-")
-				.concat(new CaseBuilder()
-						.when(intakeTime.dayOfMonth().lt(10)) // 한 자리 수 일 처리
-						.then("0")
-						.otherwise(""))
-				.concat(intakeTime.dayOfMonth().stringValue());
+		StringExpression stringIntakeTime = formatDateTimeToString(intakeTime);
 
 		return stringIntakeTime.in(targetDates);
 	}
@@ -284,5 +273,22 @@ public class ProteinQdslRepository {
 	private LocalDateTime getLastTimeOfMonth(int targetYear, int targetMonth) {
 		LocalDate lastDateOfMonth = LocalDate.of(targetYear, targetMonth, 1).with(TemporalAdjusters.lastDayOfMonth());
 		return lastDateOfMonth.atTime(23, 59, 59);
+	}
+
+	// 날짜 형식의 데이터를 StringExpression으로 변환
+	private StringExpression formatDateTimeToString(DateTimePath datetime) {
+		return datetime.year().stringValue()
+				.concat("-")
+				.concat(new CaseBuilder()
+						.when(datetime.month().lt(10)) // 한 자리 수 월 처리
+						.then("0")
+						.otherwise(""))
+				.concat(datetime.month().stringValue())
+				.concat("-")
+				.concat(new CaseBuilder()
+						.when(datetime.dayOfMonth().lt(10)) // 한 자리 수 일 처리
+						.then("0")
+						.otherwise(""))
+				.concat(datetime.dayOfMonth().stringValue());
 	}
 }
